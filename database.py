@@ -206,7 +206,45 @@ def check_user_permission(user_id, required_role):
 
     return user_level >= required_level
 
-                                    
+# for adding books, categories etc.
+def get_or_create_author(author_name):
+    con = get_db_connection()
+    cur = con.cursor()
+
+    try:
+        cur.execute("SELECT author_id FROM Author WHERE LOWER(author_name) = LOWER(%s)", (author_name,))
+        result = cur.fetchone()
+
+        if result:
+            return result[0]
+
+        cur.execute("SELECT COALESCE(MAX(author_id), 0) + 1 FROM Author")
+        new_author_id = cur.fetchone()[0]
+
+        cur.execute("INSERT INTO Author (author_id, author_name) VALUES (%s, %s)", (new_author_id, author_name))
+
+        con.commit()
+        return new_author_id
+    
+    except Exception as e:
+        con.rollback()
+        raise e
+    
+    finally:
+        cur.close()
+        con.close()
+
+def get_or_create_category(category_name):
+
+
+def add_book_to_database(title, author_name, category_name, price, image_id, uploaded_by):
+    con = get_db_connection()
+    cur = con.cursor()
+
+    try:
+        author_id = get_or_create_author(author_name)
+        category_id = get_or_create_category(category_name)
+
 
 
 
