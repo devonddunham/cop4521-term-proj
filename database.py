@@ -235,9 +235,32 @@ def get_or_create_author(author_name):
         con.close()
 
 
-#TODO: finish this
+
 def get_or_create_category(category_name):
-    return
+    con = get_db_connection()
+    cur = con.cursor()
+
+    try:
+        cur.execute("SELECT category_id FROM Category WHERE LOWER(category_name) = LOWER(%s)", (category_name,))
+        result = cur.fetchone()
+
+        if result:
+            return result[0]
+        
+        cur.execute("SELECT COALESCE(MAX(category_id), 0) + 1 FROM Category")
+        new_category_id = cur.fetchone()[0]
+        
+        cur.execute("INSERT INTO Category (category_id, category_name) VALUES (%s, %s)", (new_category_id, category_name))
+
+        con.commit()
+        return new_category_id
+    except Exception as e:
+        con.rollback()
+        raise e
+    
+    finally:
+        cur.close()
+        con.close()
 
 #TODO: finish function
 def add_book_to_database(title, author_name, category_name, price, image_id, uploaded_by):
