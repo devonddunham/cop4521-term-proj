@@ -496,4 +496,5 @@ def get_authors():
 
 
 if __name__ == '__main__':
+    start_db()
     app.run(debug=True)

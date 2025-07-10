@@ -234,9 +234,12 @@ def get_or_create_author(author_name):
         cur.close()
         con.close()
 
+
+#TODO: finish this
 def get_or_create_category(category_name):
+    return
 
-
+#TODO: finish function
 def add_book_to_database(title, author_name, category_name, price, image_id, uploaded_by):
     con = get_db_connection()
     cur = con.cursor()
@@ -246,12 +249,13 @@ def add_book_to_database(title, author_name, category_name, price, image_id, upl
         category_id = get_or_create_category(category_name)
 
 
-
-
-if __name__ == '__main__':
+def start_db():
     if input("Drop tables? y/n: ").lower() == 'y':
         drop_tables()
     initialize_db()
     create_tables_roles()
+
+if __name__ == '__main__':
+    start_db()
 
 
