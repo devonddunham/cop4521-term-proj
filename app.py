@@ -488,8 +488,7 @@ def get_authors():
     cur.close()
     con.close()
 
-    # this is for the dropdown on the upload books page
-    # im so fr i had no clue how to do this i had to ask chat
+    #same as above
     return  {'categories': [dict(author) for author in authors]}
         
 

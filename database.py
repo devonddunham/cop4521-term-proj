@@ -7,6 +7,7 @@
 
 import os
 import psycopg2
+import psycopg2.extras
 
 from dotenv import load_dotenv
 load_dotenv() # Load environment variables from .env file
@@ -67,7 +68,16 @@ def create_tables_roles():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    #tables created: Category, Authors, Book, Customer, Inventory, Transactions
+    cursor.execute('CREATE TABLE IF NOT EXISTS Users (' +
+                   'user_id VARCHAR(50) PRIMARY KEY, ' +
+                   'email VARCHAR(100) UNIQUE NOT NULL, ' +
+                   'first_name VARCHAR(50) NOT NULL, ' +
+                   'last_name VARCHAR(50) NOT NULL, ' +
+                   'password_hash VARCHAR(255) NOT NULL, ' +
+                   'role VARCHAR(20) NOT NULL DEFAULT \'Customer\', ' +
+                   'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+    
+
     cursor.execute('CREATE TABLE IF NOT EXISTS Category (category_id INT PRIMARY KEY, category_name VARCHAR(100))')
     cursor.execute('CREATE TABLE IF NOT EXISTS Author (author_id INT PRIMARY KEY, author_name VARCHAR(100))')
 
@@ -95,15 +105,6 @@ def create_tables_roles():
                 'book_id INT, ' +
                 'FOREIGN KEY(customer_id) REFERENCES Customers(customer_id), ' +
                 'FOREIGN KEY(book_id) REFERENCES Book(book_id))')
-    
-    cursor.execute('CREATE TABLE IF NOT EXISTS Users (' +
-                   'user_id VARCHAR(50) PRIMARY KEY, ' +
-                   'email VARCHAR(100) UNIQUE NOT NULL, ' +
-                   'first_name VARCHAR(50) NOT NULL, ' +
-                   'last_name VARCHAR(50) NOT NULL, ' +
-                   'password_hash VARCHAR(255) NOT NULL, ' +
-                   'role VARCHAR(20) NOT NULL DEFAULT \'Customer\', ' +
-                   'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
     
     cursor.execute('CREATE TABLE IF NOT EXISTS Cart (' +
                'cart_id SERIAL PRIMARY KEY, ' +
@@ -271,6 +272,78 @@ def add_book_to_database(title, author_name, category_name, price, image_id, upl
         author_id = get_or_create_author(author_name)
         category_id = get_or_create_category(category_name)
 
+        cur.execute("SELECT COALESCE(MAX(book_id), 0) + 1 FROM Book")
+        new_book_id = cur.fetchone()[0]
+
+        if not image_id:
+            image_id = 'default_book'
+
+        cur.execute("INSERT INTO Book (book_id, title, author_id, category_id, price, image_id, uploaded_by) VALUES (%s, %s, %s, %s, %s, %s, %s)", (new_book_id, title, author_id, category_id, price, image_id, uploaded_by))
+        cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, 1))
+
+        con.commit()
+        return True
+    
+    except Exception as e:
+        con.rollback()
+        return False, str(e)
+    finally:
+        cur.close()
+        con.close()
+
+def delete_book_from_database(book_id, user_id, user_role):
+    con = get_db_connection()
+    cur = con.cursor()
+
+    try:
+        cur.execute("SELECT uploaded_by FROM Book WHERE book_id = %s", (book_id,))
+        result = cur.fetchone()
+
+        if not result:
+            return False, "Book not found"
+        
+        uploaded_by = result[0]
+
+        #Vendors can delete their own books not others
+        if user_role == 'Vendor' and uploaded_by != user_id:
+            return False
+        
+        cur.execute("DELETE FROM Inventory WHERE book_id = %s", (book_id,))
+        cur.execute("DELETE FROM Cart WHERE book_id = %s", (book_id,))
+        cur.execute("DELETE FROM Book WHERE book_id = %s", (book_id,))
+
+        con.commit()
+        return True
+    
+    except Exception as e:
+        con.rollback()
+        return False, str(e)
+    finally:
+        cur.close()
+        con.close()
+
+def get_all_categories():
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("SELECT category_id, category_name FROM Category ORDER BY category_name")
+    data = cur.fetchall()
+    cur.close()
+    con.close()
+    return data
+
+def get_all_authors():
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("SELECT author_id, author_name FROM Author ORDER BY author_name")
+    data = cur.fetchall()
+    cur.close()
+    con.close()
+    return data
+
+    
+    
 
 def start_db():
     if input("Drop tables? y/n: ").lower() == 'y':
