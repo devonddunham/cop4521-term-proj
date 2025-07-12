@@ -1,0 +1,201 @@
+<!--FROM COPILOT-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Book - Dejiji Bookstore</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            background-color: #f9f6f1;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #5c4033;
+            color: white;
+            padding: 1.5em 0;
+            text-align: center;
+        }
+        nav {
+            background-color: #d1bfa7;
+            display: flex;
+            justify-content: center;
+            gap: 2em;
+            padding: 1em;
+        }
+        nav a {
+            text-decoration: none;
+            color: #3e2f23;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .upload-container {
+            max-width: 600px;
+            margin: 2em auto;
+            padding: 2em;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .upload-container h1 {
+            color: #5c4033;
+            text-align: center;
+            margin-bottom: 1.5em;
+        }
+        .form-group {
+            margin-bottom: 1.5em;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+            color: #5c4033;
+            font-weight: bold;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8em;
+            border: 1px solid #d1bfa7;
+            border-radius: 4px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #5c4033;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+        }
+        .submit-btn {
+            background-color: #5c4033;
+            color: white;
+            padding: 1em 2em;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #3e2f23;
+        }
+        .back-link {
+            display: block;
+            margin-top: 1em;
+            text-align: center;
+            color: #5c4033;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .flash-messages {
+            margin-bottom: 1.5em;
+        }
+        .flash-error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 0.8em;
+            border-radius: 4px;
+            border: 1px solid #ffcdd2;
+            margin-bottom: 1em;
+        }
+        .flash-success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            padding: 0.8em;
+            border-radius: 4px;
+            border: 1px solid #c8e6c9;
+            margin-bottom: 1em;
+        }
+        .help-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 0.3em;
+        }
+        .required {
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Upload New Book</h1>
+</header>
+
+<nav>
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('vendor_dashboard') if session.get('user_id') and get_current_user_role() == 'Vendor' else url_for('employee_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</nav>
+
+<div class="upload-container">
+    <h1>Add New Book to Inventory</h1>
+    
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="title">Book Title <span class="required">*</span></label>
+            <input type="text" id="title" name="title" required 
+                   placeholder="Enter the book title">
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="author_name">Author <span class="required">*</span></label>
+                <input type="text" id="author_name" name="author_name" required 
+                       placeholder="Author's full name">
+                <div class="help-text">If author doesn't exist, we'll create a new entry</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="category_name">Category <span class="required">*</span></label>
+                <input type="text" id="category_name" name="category_name" required 
+                       placeholder="e.g., Fiction, Science, Biography">
+                <div class="help-text">If category doesn't exist, we'll create a new entry</div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="price">Price (USD) <span class="required">*</span></label>
+                <input type="number" id="price" name="price" required min="1" 
+                       placeholder="Enter price without $ sign">
+            </div>
+            
+            <div class="form-group">
+                <label for="image_id">Image ID</label>
+                <input type="text" id="image_id" name="image_id" 
+                       placeholder="e.g., book_cover_123 (optional)">
+                <div class="help-text">Leave blank to use default image</div>
+            </div>
+        </div>
+        
+        <button type="submit" class="submit-btn">Upload Book</button>
+        
+        <a href="{{ url_for('vendor_dashboard') if session.get('user_id') and get_current_user_role() == 'Vendor' else url_for('employee_dashboard') }}" 
+           class="back-link">← Back to Dashboard</a>
+    </form>
+</div>
+
+</body>
+</html>

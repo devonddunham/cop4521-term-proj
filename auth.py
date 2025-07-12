@@ -23,6 +23,9 @@ ignore bad typos for comments (i have a concussion)
 """
 
 
+#TODO: Add date requirement for session token
+
+
 def generate_user_id(first_name, last_name, email):
     first_part = first_name[:5].lower()
     last_part = last_name[:5].lower()
@@ -73,7 +76,7 @@ def create_user(email, first_name, last_name, password, role='Customer'):
 
         if not assign_user_role(user_id, role):
             print("Error assigning role")
-            
+
         return user_id, "User creation was successful!"
 
     except Exception as e:

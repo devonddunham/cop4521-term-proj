@@ -3,17 +3,30 @@ from database import *
 import psycopg2.extras
 from auth import *
 from functools import wraps
+import os # for uploading files and managing on system
+from werkzeug.utils import secure_filename # hell yeah worktrain
+import uuid 
 
 
 app = Flask(__name__)
 app.secret_key = 'wubahubalub3456765' #no one guessing ts
 
 
+UPLOAD_FOLDER = 'static/images'
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 """In check_user_permission() in database.py, I assigned each role to a number
 Customer = 1, Vendor = 2, Employee = 3, Admin = 4
 The require_role() decorator checks this
 if a page requires Vendor to access it, Employee and Admin can also access it
 If a page requires Employee, only Employee and Admin can see it, not Vendor or Customer"""
+
+# this is for security and consistency
+# it is a security vulnerability to allow unknown files to be uploaded to the system
+# this function was written by ChatGPT because idk how to do this (i do now)
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def require_role(required_role):
     def decorator(f):
@@ -374,9 +387,113 @@ def employee_dashboard():
 
 
 #upload processes:
+@app.route('/upload_book', methods=['GET', 'POST'])
+@require_role('Vendor')
+def upload_book():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        author_name = request.form.get('author_name')
+        category_name = request.form.get('category_name')
+        price = request.form.get('price')
 
+        book_image = request.files.get('book_image')
+        image_id = 'default_book' #if no image uploaded, go to default
+        #TODO add a default image in static
+
+        #once again i had to consult ChatGPT for help
+        if book_image and book_image.filename != '' and allowed_file(book_image.filename):
+            filename = secure_filename(book_image.filename)
+            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+
+            #make sure the path exists, if this is ur first time cloning, it will not
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+            book_image.save(image_path)
+
+            image_id = os.path.splittext(unique_filename)[0]
+
+        if not all([title, author_name, category_name, price]):
+            flash("All fields except image are required, ")
+            return render_template('upload_book.html')
+        
+        try:
+            price = int(price)
+            if price <= 0:
+                flash('Price must be a positive number')
+                return render_template('upload_book.html')
+        except ValueError:
+            flash('Price is invalid')
+            return render_template('upload_book.html')
+        
+        user_id = session['user_id']
+        success, message = add_book_to_database(title, author_name, category_name, price, image_id, user_id)
+
+        if success:
+            flash('Book uploaded!')
+            user_role = get_current_user_role()
+            if user_role == 'Employee':
+                return redirect(url_for('employee_dashboard'))
+            else:
+                return redirect(url_for('vendor_dashboard'))
+        else:
+            flash(f'Error uploading book: {message}')
+
+    return render_template('upload_book.html')
+
+@app.route('/delete_book/<int:book_id>', methods=['POST'])
+@require_role('Vendor')
+def delete_book(book_id):
+    user_id = session['user_id']
+    user_role = get_current_user_role()
+
+    success, message = delete_book_from_database(book_id, user_id, user_role)
+
+    if success:
+        flash("Book deleted!")
+    else:
+        flash("Book failed to delete!")
+
+    if user_role == 'Employee':
+        return redirect(url_for('employee_dashboard'))
+    else:
+        return redirect(url_for('vendor_dashboard'))
+    
+#TODO: Add categories in database.py
+@app.route('/api/categories')
+@require_role('Vendor')
+def get_categories():
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("SELECT category_id, category_name FROM Category ORDER BY category_name")
+    categories = cur.fetchall()
+
+    cur.close()
+    con.close()
+
+    # this is for the dropdown on the upload books page
+    # im so fr i had no clue how to do this i had to ask chat
+    return  {'categories': [dict(cat) for cat in categories]}
+
+@app.route('/api/authors')
+@require_role('Vendor')
+def get_authors():
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("SELECT author_id, author_name FROM Author ORDER BY author_name")
+    authors = cur.fetchall()
+
+    cur.close()
+    con.close()
+
+    #same as above
+    return  {'categories': [dict(author) for author in authors]}
+        
 
 
 
 if __name__ == '__main__':
+    start_db()
     app.run(debug=True)
