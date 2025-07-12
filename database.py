@@ -81,6 +81,15 @@ def create_tables_roles():
     cursor.execute('CREATE TABLE IF NOT EXISTS Category (category_id INT PRIMARY KEY, category_name VARCHAR(100))')
     cursor.execute('CREATE TABLE IF NOT EXISTS Author (author_id INT PRIMARY KEY, author_name VARCHAR(100))')
 
+    cursor.execute('CREATE TABLE IF NOT EXISTS Users (' +
+                   'user_id VARCHAR(50) PRIMARY KEY, ' +
+                   'email VARCHAR(100) UNIQUE NOT NULL, ' +
+                   'first_name VARCHAR(50) NOT NULL, ' +
+                   'last_name VARCHAR(50) NOT NULL, ' +
+                   'password_hash VARCHAR(255) NOT NULL, ' +
+                   'role VARCHAR(20) NOT NULL DEFAULT \'Customer\', ' +
+                   'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+
     cursor.execute('CREATE TABLE IF NOT EXISTS Book (' +
                 'book_id INT PRIMARY KEY, ' +
                 'title VARCHAR(100), ' +
