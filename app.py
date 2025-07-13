@@ -342,6 +342,103 @@ def view_cart():
     return render_template('cart.html', cart_items=cart_items, total=total)
 
 
+@app.route('/cart/update', methods=['POST'])
+@require_role('Customer')
+def update_cart_quantity():
+    cart_id = request.form.get('cart_id')
+    action = request.form.get('action')
+
+    if not cart_id or not action:
+        flash('Invalid request')
+        return redirect(url_for('view_cart'))
+    
+    con = get_db_connection()
+    cur = con.cursor()
+
+    try:
+        cur.execute("SELECT quantity FROM Cart WHERE cart_id = %s", (cart_id,))
+        result = cur.fetchone()
+
+        if not result:
+            flash('Cart item not found')
+            return redirect(url_for('view_cart'))
+        current_quantity = result[0]
+
+        if action == 'increase':
+            new_quantity = current_quantity + 1
+        elif action == 'decrease':
+            #just to make sure it cant go negative
+            new_quantity = max(1, current_quantity - 1)
+        else:
+            flash('Invalid action')
+            return redirect(url_for('view_cart'))
+        
+        cur.execute("UPDATE Cart SET quantity = %s WHERE cart_id = %s", (new_quantity, cart_id))
+        con.commit()
+
+    except Exception as e:
+        con.rollback()
+        flash('Error updating cart')
+    finally:
+        cur.close()
+        con.close()
+    
+    return redirect(url_for('view_cart'))
+
+@app.route('/cart/remove', methods=['POST'])
+@require_role('Customer')
+def remove_from_cart():
+    cart_id = request.form.get('cart_id')
+
+    if not cart_id:
+        flash('Invalid request')
+        return redirect(url_for('view_cart'))
+    
+    con = get_db_connection()
+    cur = con.cursor()
+
+    try:
+        cur.execute("DELETE FROM Cart WHERE cart_id = %s", (cart_id,))
+        con.commit()
+    
+    except Exception as e:
+        con.rollback()
+        flash('Error removing item from cart')
+    finally:
+        cur.close()
+        con.close()
+
+    return redirect(url_for('view_cart'))
+
+@app.route('/search', methods=['GET', 'POST'])
+@require_role('Customer')
+def search():
+    books = []
+    query = ''
+    if request.method == 'POST':
+        query = request.form.get('query', '').strip()
+        if query:
+            con = get_db_connection()
+            cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            # search by title or author name, case insensitive, partial matches (LIKE query)
+            cur.execute("""
+                SELECT b.book_id, b.title, b.price, b.image_id, a.author_name
+                FROM Book b
+                JOIN Author a ON b.author_id = a.author_id
+                WHERE LOWER(b.title) LIKE %s OR LOWER(a.author_name) LIKE %s
+                ORDER BY b.title ASC
+            """, (f'%{query.lower()}%', f'%{query.lower()}%'))
+
+            books = cur.fetchall()
+            cur.close()
+            con.close()
+        else:
+            flash('Please enter a search term', 'error')
+
+    return render_template('searchbooks.html', books=books, query=query)
+
+
 
 #dashboards:
 
