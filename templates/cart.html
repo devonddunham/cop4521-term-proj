@@ -1,83 +1,300 @@
-<!-- page for user to see all the books they are deciding to buy. This will have
-a link to allow the person to go to the checkout html to finish session-->
-
+<!--From Copilot-->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Your Cart</title>
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart - Dejiji Bookstore</title>
     <style>
-      body {
-        font-family: Georgia, serif;
-        background-color: #f9f6f1;
-        color: #333;
-        margin: 0;
-        padding: 0;
-      }
-      header {
-        background-color: #5c4033;
-        color: white;
-        padding: 1.5em 0;
-        text-align: center;
-      }
-      nav {
-        background-color: #d1bfa7;
-        display: flex;
-        justify-content: center;
-        gap: 2em;
-        padding: 1em;
-      }
-      nav a {
-        text-decoration: none;
-        color: #3e2f23;
-        font-weight: bold;
-      }
-      nav a:hover {
-        text-decoration: underline;
-      }
-      main {
-        padding: 2em;
-        text-align: center;
-      }
-      .highlight {
-        font-size: 1.2em;
-        margin-top: 1em;
-        color: #5c4033;
-      }
-      footer {
-        text-align: center;
-        padding: 1em;
-        background-color: #eee;
-        font-size: 0.9em;
-      }
+        body {
+            font-family: Georgia, serif;
+            background-color: #f9f6f1;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #5c4033;
+            color: white;
+            padding: 1.5em 0;
+            text-align: center;
+        }
+        nav {
+            background-color: #d1bfa7;
+            display: flex;
+            justify-content: center;
+            gap: 2em;
+            padding: 1em;
+        }
+        nav a {
+            text-decoration: none;
+            color: #3e2f23;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        main {
+            padding: 2em;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .cart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 2em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .cart-item {
+            display: grid;
+            grid-template-columns: 100px 1fr auto auto auto;
+            gap: 1em;
+            padding: 1em;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        .book-image {
+            width: 80px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .book-info {
+            text-align: left;
+        }
+        .book-title {
+            font-weight: bold;
+            color: #5c4033;
+            margin-bottom: 0.5em;
+        }
+        .book-author {
+            color: #666;
+            font-style: italic;
+        }
+        .book-price {
+            font-weight: bold;
+            color: #5c4033;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        .quantity-btn {
+            background: #5c4033;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .quantity-btn:hover {
+            background: #3e2f23;
+        }
+        .quantity-display {
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .item-total {
+            font-weight: bold;
+            color: #5c4033;
+            font-size: 1.1em;
+        }
+        .remove-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 0.5em 1em;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-btn:hover {
+            background: #d32f2f;
+        }
+        .cart-summary {
+            background: #f9f6f1;
+            padding: 1.5em;
+            border-radius: 8px;
+            margin-top: 2em;
+            text-align: center;
+        }
+        .cart-total {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #5c4033;
+            margin-bottom: 1em;
+        }
+        .checkout-btn {
+            background: #4caf50;
+            color: white;
+            padding: 1em 2em;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 1em;
+        }
+        .checkout-btn:hover {
+            background: #45a049;
+        }
+        .continue-shopping {
+            background: #2196f3;
+            color: white;
+            padding: 1em 2em;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .continue-shopping:hover {
+            background: #1976d2;
+        }
+        .empty-cart {
+            text-align: center;
+            padding: 3em;
+            color: #666;
+        }
+        .empty-cart h2 {
+            color: #5c4033;
+            margin-bottom: 1em;
+        }
+        .flash-messages {
+            margin-bottom: 1em;
+        }
+        .flash-success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            padding: 0.8em;
+            border-radius: 4px;
+            border: 1px solid #c8e6c9;
+            margin-bottom: 1em;
+        }
+        .flash-error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 0.8em;
+            border-radius: 4px;
+            border: 1px solid #ffcdd2;
+            margin-bottom: 1em;
+        }
+        .cart-header {
+            display: grid;
+            grid-template-columns: 100px 1fr auto auto auto;
+            gap: 1em;
+            padding: 1em;
+            background: #5c4033;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px 8px 0 0;
+        }
     </style>
-  </head>
-  <body>
-    <header>
-      <h1>Dejiji Bookstore</h1>
-      <p>Your Cart</p>
-    </header>
+</head>
+<body>
 
-    <nav>
-      <a href="/">Home</a>
-      <a href="../templates/searchbooks.html">Search For More</a>
-    </nav>
-    <main>
-      <!-- something like this later when we set up the code -->
-      <!-- <h2>Your Selected Books</h2>
-      <ul>
-        {% for book in cart %}
-        <li>{{ book.title }} - ${{ book.price }}</li>
-        {% endfor %}
-      </ul>
+<header>
+    <h1>Dejiji Bookstore</h1>
+    <p>Your Shopping Cart</p>
+</header>
 
-      <p class="highlight">Total: ${{ total_price }}</p> -->
+<nav>
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('view_cart') }}">Cart</a>
+    <a href="/catalog">Browse Books</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</nav>
 
-      <a href="..templates/checkout.html" class="highlight"
-        >Proceed to Checkout</a
-      >
-    </main>
+<main>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
 
-    <footer>&copy; 2025 DEJIJI. All rights reserved or else.</footer>
-  </body>
+    <div class="cart-container">
+        {% if cart_items %}
+            <div class="cart-header">
+                <div>Image</div>
+                <div>Book Details</div>
+                <div>Price</div>
+                <div>Quantity</div>
+                <div>Total</div>
+                <div>Action</div>
+            </div>
+
+            {% for item in cart_items %}
+            <div class="cart-item">
+                <div>
+                    <img src="/static/images/{{ item.image_id }}.jpeg" 
+                         alt="{{ item.title }}" 
+                         class="book-image"
+                         onerror="this.src='/static/images/default_book.png'">
+                </div>
+                
+                <div class="book-info">
+                    <div class="book-title">{{ item.title }}</div>
+                    <div class="book-author">by {{ item.author_name }}</div>
+                </div>
+                
+                <div class="book-price">${{ item.price }}</div>
+                
+                <div class="quantity-controls">
+                    <form method="POST" action="{{ url_for('update_cart_quantity') }}" style="display: inline;">
+                        <input type="hidden" name="cart_id" value="{{ item.cart_id }}">
+                        <input type="hidden" name="action" value="decrease">
+                        <button type="submit" class="quantity-btn">-</button>
+                    </form>
+                    
+                    <span class="quantity-display">{{ item.quantity }}</span>
+                    
+                    <form method="POST" action="{{ url_for('update_cart_quantity') }}" style="display: inline;">
+                        <input type="hidden" name="cart_id" value="{{ item.cart_id }}">
+                        <input type="hidden" name="action" value="increase">
+                        <button type="submit" class="quantity-btn">+</button>
+                    </form>
+                </div>
+                
+                <div class="item-total">${{ item.item_total }}</div>
+                
+                <div>
+                    <form method="POST" action="{{ url_for('remove_from_cart') }}" style="display: inline;">
+                        <input type="hidden" name="cart_id" value="{{ item.cart_id }}">
+                        <button type="submit" class="remove-btn" onclick="return confirm('Remove this book from cart?')">Remove</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="cart-summary">
+                <div class="cart-total">Total: ${{ total }}</div>
+                <a href="{{ url_for('home') }}" class="continue-shopping">Continue Shopping</a>
+            </div>
+
+        {% else %}
+            <div class="empty-cart">
+                <h2>Your cart is empty</h2>
+                <p>Browse our collection and add some books to your cart!</p>
+                <a href="{{ url_for('home') }}" class="continue-shopping">Start Shopping</a>
+            </div>
+        {% endif %}
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2025 DEJIJI. All rights reserved.</p>
+</footer>
+
+</body>
 </html>

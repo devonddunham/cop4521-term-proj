@@ -299,8 +299,12 @@ def add_to_cart(book_id):
                           (user_id, book_id, quantity))
         con.commit()
         cur.execute("SELECT title FROM Book WHERE book_id = %s", (book_id,))
-        title = cur.fetchone()
-        flash(f'{title} added to cart!')
+        title_result = cur.fetchone()
+        if title_result:
+            title = title_result[0]
+            flash(f'{title} added to cart!')
+        else:
+            flash('Book added to cart!')
     
     except Exception as e:
         con.rollback()
@@ -337,33 +341,7 @@ def view_cart():
 
     return render_template('cart.html', cart_items=cart_items, total=total)
 
-@app.route('/search', methods=['GET', 'POST'])
-@require_role('Customer')
-def search():
-    books = []
-    query = ''
-    if request.method == 'POST':
-        query = request.form.get('query', '').strip()
-        if query:
-            con = get_db_connection()
-            cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            # search by title or author name, case insensitive, partial matches (LIKE query)
-            cur.execute("""
-                SELECT b.book_id, b.title, b.price, b.image_id, a.author_name
-                FROM Book b
-                JOIN Author a ON b.author_id = a.author_id
-                WHERE LOWER(b.title) LIKE %s OR LOWER(a.author_name) LIKE %s
-                ORDER BY b.title ASC
-            """, (f'%{query.lower()}%', f'%{query.lower()}%'))
-
-            books = cur.fetchall()
-            cur.close()
-            con.close()
-        else:
-            flash('Please enter a search term', 'error')
-
-    return render_template('searchbooks.html', books=books, query=query)
 
 #dashboards:
 
@@ -417,6 +395,8 @@ def employee_dashboard():
 @app.route('/upload_book', methods=['GET', 'POST'])
 @require_role('Vendor')
 def upload_book():
+    user_role = get_current_user_role()
+
     if request.method == 'POST':
         title = request.form.get('title')
         author_name = request.form.get('author_name')
@@ -438,27 +418,26 @@ def upload_book():
 
             book_image.save(image_path)
 
-            image_id = os.path.splittext(unique_filename)[0]
+            image_id = os.path.splitext(unique_filename)[0]
 
         if not all([title, author_name, category_name, price]):
             flash("All fields except image are required, ")
-            return render_template('upload_book.html')
+            return render_template('upload_book.html',user_role=user_role)
         
         try:
             price = int(price)
             if price <= 0:
                 flash('Price must be a positive number')
-                return render_template('upload_book.html')
+                return render_template('upload_book.html', user_role=user_role)
         except ValueError:
             flash('Price is invalid')
-            return render_template('upload_book.html')
+            return render_template('upload_book.html',user_role=user_role)
         
         user_id = session['user_id']
         success, message = add_book_to_database(title, author_name, category_name, price, image_id, user_id)
 
         if success:
             flash('Book uploaded!')
-            user_role = get_current_user_role()
             if user_role == 'Employee':
                 return redirect(url_for('employee_dashboard'))
             else:
@@ -466,7 +445,7 @@ def upload_book():
         else:
             flash(f'Error uploading book: {message}')
 
-    return render_template('upload_book.html')
+    return render_template('upload_book.html', user_role=user_role)
 
 @app.route('/delete_book/<int:book_id>', methods=['POST'])
 @require_role('Vendor')
@@ -522,5 +501,8 @@ def get_authors():
 
 
 if __name__ == '__main__':
+
     start_db()
+        
+
     app.run(debug=True)
