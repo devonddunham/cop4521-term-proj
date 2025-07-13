@@ -337,6 +337,33 @@ def view_cart():
 
     return render_template('cart.html', cart_items=cart_items, total=total)
 
+@app.route('/search', methods=['GET', 'POST'])
+@require_role('Customer')
+def search():
+    books = []
+    query = ''
+    if request.method == 'POST':
+        query = request.form.get('query', '').strip()
+        if query:
+            con = get_db_connection()
+            cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+            # search by title or author name, case insensitive, partial matches (LIKE query)
+            cur.execute("""
+                SELECT b.book_id, b.title, b.price, b.image_id, a.author_name
+                FROM Book b
+                JOIN Author a ON b.author_id = a.author_id
+                WHERE LOWER(b.title) LIKE %s OR LOWER(a.author_name) LIKE %s
+                ORDER BY b.title ASC
+            """, (f'%{query.lower()}%', f'%{query.lower()}%'))
+
+            books = cur.fetchall()
+            cur.close()
+            con.close()
+        else:
+            flash('Please enter a search term', 'error')
+
+    return render_template('searchbooks.html', books=books, query=query)
 
 #dashboards:
 
