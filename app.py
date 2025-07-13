@@ -341,73 +341,7 @@ def view_cart():
 
     return render_template('cart.html', cart_items=cart_items, total=total)
 
-@app.route('/cart/update', methods=['POST'])
-@require_role('Customer')
-def update_cart_quantity():
-    cart_id = request.form.get('cart_id')
-    action = request.form.get('action')
 
-    if not cart_id or not action:
-        flash('Invalid request')
-        return redirect(url_for('view_cart'))
-    
-    con = get_db_connection()
-    cur = con.cursor()
-
-    try:
-        cur.execute("SELECT quantity FROM Cart WHERE cart_id = %s", (cart_id,))
-        result = cur.fetchone()
-
-        if not result:
-            flash('Cart item not found')
-            return redirect(url_for('view_cart'))
-        current_quantity = result[0]
-
-        if action == 'increase':
-            new_quantity = current_quantity + 1
-        elif action == 'decrease':
-            #just to make sure it cant go negative
-            new_quantity = max(1, current_quantity - 1)
-        else:
-            flash('Invalid action')
-            return redirect(url_for('view_cart'))
-        
-        cur.execute("UPDATE Cart SET quantity = %s WHERE cart_id = %s", (new_quantity, cart_id))
-        con.commit()
-
-    except Exception as e:
-        con.rollback()
-        flash('Error updating cart')
-    finally:
-        cur.close()
-        con.close()
-    
-    return redirect(url_for('view_cart'))
-
-@app.route('/cart/remove', methods=['POST'])
-@require_role('Customer')
-def remove_from_cart():
-    cart_id = request.form.get('cart_id')
-
-    if not cart_id:
-        flash('Invalid request')
-        return redirect(url_for('view_cart'))
-    
-    con = get_db_connection()
-    cur = con.cursor()
-
-    try:
-        cur.execute("DELETE FROM Cart WHERE cart_id = %s", (cart_id,))
-        con.commit()
-    
-    except Exception as e:
-        con.rollback()
-        flash('Error removing item from cart')
-    finally:
-        cur.close()
-        con.close()
-
-    return redirect(url_for('view_cart'))
 
 #dashboards:
 
