@@ -282,7 +282,7 @@ def add_book_to_database(title, author_name, category_name, price, image_id, upl
         cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, 1))
 
         con.commit()
-        return True
+        return True, 'Book added!'
     
     except Exception as e:
         con.rollback()

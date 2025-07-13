@@ -125,6 +125,17 @@
         .required {
             color: #c62828;
         }
+        .file-input {
+            margin-top: 0.5em;
+        }
+        .file-input input[type="file"] {
+            padding: 0.5em;
+            border: 2px dashed #d1bfa7;
+            background-color: #f9f6f1;
+        }
+        .file-input input[type="file"]:hover {
+            border-color: #5c4033;
+        }
     </style>
 </head>
 <body>
@@ -135,7 +146,7 @@
 
 <nav>
     <a href="{{ url_for('home') }}">Home</a>
-    <a href="{{ url_for('vendor_dashboard') if session.get('user_id') and get_current_user_role() == 'Vendor' else url_for('employee_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('vendor_dashboard') if user_role == 'Vendor' else url_for('employee_dashboard') }}">Dashboard</a>
     <a href="{{ url_for('logout') }}">Logout</a>
 </nav>
 
@@ -152,7 +163,8 @@
         {% endwith %}
     </div>
 
-    <form method="POST">
+    <!-- Added enctype="multipart/form-data" to support file uploads -->
+    <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label for="title">Book Title <span class="required">*</span></label>
             <input type="text" id="title" name="title" required 
@@ -182,18 +194,21 @@
                        placeholder="Enter price without $ sign">
             </div>
             
+            <!-- Replaced image_id text input with file upload -->
             <div class="form-group">
-                <label for="image_id">Image ID</label>
-                <input type="text" id="image_id" name="image_id" 
-                       placeholder="e.g., book_cover_123 (optional)">
-                <div class="help-text">Leave blank to use default image</div>
+                <label for="book_image">Book Cover Image</label>
+                <div class="file-input">
+                    <input type="file" id="book_image" name="book_image" 
+                           accept=".jpg,.jpeg" 
+                           placeholder="Choose book cover image">
+                    <div class="help-text">Upload JPG or JPEG only. Leave blank for default image.</div>
+                </div>
             </div>
         </div>
         
         <button type="submit" class="submit-btn">Upload Book</button>
         
-        <a href="{{ url_for('vendor_dashboard') if session.get('user_id') and get_current_user_role() == 'Vendor' else url_for('employee_dashboard') }}" 
-           class="back-link">← Back to Dashboard</a>
+        <a href="{{ url_for('vendor_dashboard') if user_role == 'Vendor' else url_for('employee_dashboard') }}" class="back-link">← Back to Dashboard</a>
     </form>
 </div>
 
