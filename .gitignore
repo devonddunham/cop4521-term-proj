@@ -75,3 +75,10 @@ dump.rdb
 dist/
 build/
 *.egg-info/ 
+
+config/
+FileContentIndex/
+v17/
+*.json
+*.sqlite
+
