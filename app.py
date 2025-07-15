@@ -594,6 +594,10 @@ def get_authors():
     #same as above
     return  {'categories': [dict(author) for author in authors]}
         
+@app.route('/about')
+@require_role('Customer')
+def about():
+    return render_template('about.html')
 
 
 
