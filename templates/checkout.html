@@ -64,14 +64,15 @@
 <body>
   <h1>Bookstore Checkout</h1>
 
-  <form action="#" method="post">
+ <form method="POST" action="{{ url_for('checkout') }}">
     <div class="cart">
       <h2>Your Cart</h2>
       <ul>
-        <!--code for printing out the name and price from cart if possible?
-        <li>{{ book.title }} - ${{ book.price }}</li>
+        {% for item in cart_items %}
+          <li>{{ item.quantity }} x {{ item.title }} — ${{ item.price }}</li>
+        {% endfor %}
       </ul>
-      <div class="total">Total: $29.97</div>-->
+      <div class="total">Total: ${{ total }}</div>
     </div>
 
     <label for="payment">Payment Method:</label>

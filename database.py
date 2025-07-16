@@ -330,6 +330,35 @@ def delete_book_from_database(book_id, user_id, user_role):
     finally:
         cur.close()
         con.close()
+def process_checkout_in_database(user_id):
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    try:
+        cur.execute("SELECT * FROM Cart JOIN Book ON Cart.book_id = Book.book_id WHERE user_id = %s", (user_id,))
+        cart_items = cur.fetchall()
+
+        if not cart_items:
+            return False, "Your cart is empty. Cannot process checkout."
+
+        total_price = sum(item['quantity'] * item['price'] for item in cart_items)
+
+        cur.execute(
+            "INSERT INTO Transactions (transaction_total, transaction_date, customer_id) VALUES (%s, CURRENT_DATE, %s)",
+            (total_price, user_id)
+        )
+
+        cur.execute("DELETE FROM Cart WHERE user_id = %s", (user_id,))
+
+        con.commit()
+        return True, "Order placed successfully!"
+
+    except Exception as e:
+        con.rollback()
+        return False, str(e)
+    finally:
+        cur.close()
+        con.close()
 
 def get_all_categories():
     con = get_db_connection()

@@ -599,6 +599,56 @@ def get_authors():
 def about():
     return render_template('about.html')
 
+@app.errorhandler(404)
+def page_not_found(e):
+    # Handles "Page Not Found" errors.
+    return render_template(
+        'error.html',
+        error_code="404",
+        error_title="Page Not Found",
+        error_message="Sorry, the page you are looking for does not exist or has been moved."
+    ), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    # Handles "Internal Server Error" when the code crashes.
+    return render_template(
+        'error.html',
+        error_code="500",
+        error_title="Internal Server Error",
+        error_message="We're sorry, something went wrong on our end. We've been notified and are looking into it."
+    ), 500
+@app.route('/checkout', methods=['GET', 'POST'])
+@require_role('Customer')
+def checkout():
+    user_id = session.get('user_id')
+
+    if request.method == 'POST':
+        success, message = process_checkout_in_database(user_id)
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('home'))
+        else:
+            flash(f"An error occurred during checkout: {message}", 'error')
+            return redirect(url_for('view_cart'))
+
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("""
+        SELECT c.quantity, b.title, b.price, (c.quantity * b.price) as item_total
+        FROM Cart c JOIN Book b ON c.book_id = b.book_id WHERE c.user_id = %s
+    """, (user_id,))
+    cart_items = cur.fetchall()
+    cur.close()
+    con.close()
+
+    if not cart_items:
+        flash("Your cart is empty.", "info")
+        return redirect(url_for('view_cart'))
+
+    total = sum(item['item_total'] for item in cart_items)
+    return render_template('checkout.html', cart_items=cart_items, total=total)
+
 
 
 if __name__ == '__main__':
