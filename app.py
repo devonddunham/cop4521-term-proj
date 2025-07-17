@@ -220,22 +220,27 @@ def home():
     con = get_db_connection()
     cursor = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    # use STRING_AGG to combine multiple authors into a single string
     cursor.execute("""        
-        SELECT b.book_id, b.title, b.price, b.image_id, a.author_name
+        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_name
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
+        JOIN BookAuthors ba ON b.book_id = ba.book_id
+        JOIN Author a ON ba.author_id = a.author_id
         WHERE b.price > 10 AND b.price < 20
+        GROUP BY b.book_id
         ORDER BY b.price ASC
     """)
 
     books_under_20 = cursor.fetchall()
 
-    cursor.execute("""
-        SELECT b.book_id, b.title, b.price, b.image_id, a.author_name
+    cursor.execute("""        
+        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_name
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
+        JOIN BookAuthors ba ON b.book_id = ba.book_id
+        JOIN Author a ON ba.author_id = a.author_id
         WHERE b.price < 10
-        ORDER BY b.price ASC           
+        GROUP BY b.book_id
+        ORDER BY b.price ASC
     """)
 
     books_under_10 = cursor.fetchall()
@@ -256,11 +261,17 @@ def book_detail(book_id):
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cur.execute("""
-        SELECT b.book_id, b.title, b.price, b.image_id, a.author_name, c.category_name
+        SELECT 
+            b.book_id, b.title, b.price, b.image_id, b.short_description,
+            STRING_AGG(DISTINCT a.author_name, ', ') as author_names,
+            STRING_AGG(DISTINCT c.category_name, ', ') as categories
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
-        JOIN Category c ON b.category_id = c.category_id
+        LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+        LEFT JOIN Author a ON ba.author_id = a.author_id
+        LEFT JOIN BookCategories bc ON b.book_id = bc.book_id
+        LEFT JOIN Category c ON bc.category_id = c.category_id
         WHERE b.book_id = %s
+        GROUP BY b.book_id
     """, (book_id,))
 
     book = cur.fetchone()
@@ -421,12 +432,14 @@ def search():
             con = get_db_connection()
             cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            # search by title or author name, case insensitive, partial matches (LIKE query)
+            # search by title or author name, case insensitive, partial matches (LIKE query), or STRING_AGG for multiple authors
             cur.execute("""
-                SELECT b.book_id, b.title, b.price, b.image_id, a.author_name
+                SELECT b.book_id, b.title, b.price, b.image_id, b.short_description, STRING_AGG(a.author_name, ', ') as author_names
                 FROM Book b
-                JOIN Author a ON b.author_id = a.author_id
-                WHERE LOWER(b.title) LIKE %s OR LOWER(a.author_name) LIKE %s
+                JOIN BookAuthors ba ON b.book_id = ba.book_id
+                JOIN Author a ON ba.author_id = a.author_id
+                GROUP BY b.book_id
+                HAVING LOWER(b.title) LIKE %s OR LOWER(STRING_AGG(a.author_name, ', ')) LIKE %s
                 ORDER BY b.title ASC
             """, (f'%{query.lower()}%', f'%{query.lower()}%'))
 
@@ -496,9 +509,13 @@ def upload_book():
 
     if request.method == 'POST':
         title = request.form.get('title')
-        author_name = request.form.get('author_name')
-        category_name = request.form.get('category_name')
+        author_name_str = request.form.get('author_name', '')
+        category_name_str = request.form.get('category_name', '')
         price = request.form.get('price')
+        short_description = request.form.get('short_description')
+
+        author_names = [name.strip() for name in author_name_str.split(',') if name.strip()]
+        category_names = [name.strip() for name in category_name_str.split(',') if name.strip()]
 
         book_image = request.files.get('book_image')
         image_id = 'default_book' #if no image uploaded, go to default
@@ -517,7 +534,7 @@ def upload_book():
 
             image_id = os.path.splitext(unique_filename)[0]
 
-        if not all([title, author_name, category_name, price]):
+        if not all([title, author_names, category_names, price]):
             flash("All fields except image are required, ")
             return render_template('upload_book.html',user_role=user_role)
         
@@ -531,7 +548,7 @@ def upload_book():
             return render_template('upload_book.html',user_role=user_role)
         
         user_id = session['user_id']
-        success, message = add_book_to_database(title, author_name, category_name, price, image_id, user_id)
+        success, message = add_book_to_database(title, author_names, category_names, price, image_id, user_id, short_description)
 
         if success:
             flash('Book uploaded!')
