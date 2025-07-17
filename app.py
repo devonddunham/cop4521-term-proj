@@ -264,7 +264,7 @@ def book_detail(book_id):
         SELECT 
             b.book_id, b.title, b.price, b.image_id, b.short_description,
             STRING_AGG(DISTINCT a.author_name, ', ') as author_names,
-            STRING_AGG(DISTINCT c.category_name, ', ') as categories
+            STRING_AGG(DISTINCT c.category_name, ', ') as category_names
         FROM Book b
         LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
         LEFT JOIN Author a ON ba.author_id = a.author_id
