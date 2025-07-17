@@ -98,6 +98,14 @@
         color: #5c4033;
         font-weight: bold;
       }
+      .book-description {
+        font-size: 0.9em;
+        color: #333;
+        margin: 0.5em 0;
+        height: 3em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .not-found {
         color: red;
         font-weight: bold;
@@ -139,7 +147,8 @@
             class="book-image"
           />
           <div class="book-title">{{ book.title }}</div>
-          <div class="book-author">by {{ book.author_name }}</div>
+          <div class="book-author">by {{ book.author_names }}</div>
+          <div class="book-description">{{ book.short_description }}</div>
           <div class="book-price">${{ book.price }}</div>
         </a>
       </div>
