@@ -43,7 +43,12 @@ def require_role(required_role):
             if not check_user_permission(user_id, required_role):
                 user_role = get_user_role(user_id)
                 flash(f'ACCESS DENIED! Required role: {required_role}')
-                return redirect(url_for('home'))
+                if user_role == 'Vendor':
+                    return redirect(url_for('vendor_dashboard'))
+                elif user_role == 'Employee':
+                    return redirect(url_for('employee_dashboard'))
+                else:
+                    return redirect(url_for('login'))
             
             return f(*args, **kwargs)
         return decorated_function
@@ -217,9 +222,19 @@ def logout():
 @require_role('Customer')
 def home():
 
+    user_id = session.get('user_id')
+
+
     con = get_db_connection()
     cursor = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    cursor.execute("SELECT first_name FROM Users WHERE user_id = %s", (user_id,))
+    
+
+    name = cursor.fetchone()
+
+    Hello = "Hello, " + name[0]
+    
     # use STRING_AGG to combine multiple authors into a single string
     cursor.execute("""        
         SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_names
@@ -248,7 +263,10 @@ def home():
     cursor.close()
     con.close()
 
-    return render_template('home.html', books_under_10 = books_under_10, books_under_20 = books_under_20)
+    if get_current_user_role() == 'Vendor':
+        return render_template('vendorHome.html', books_under_10 = books_under_10, books_under_20 = books_under_20, Hello=Hello)
+    else:
+        return render_template('home.html', books_under_10 = books_under_10, books_under_20 = books_under_20, Hello=Hello)
 
 #this is similar to a React component, it will be used across the webiste
 #when a user clicks on a book, this will flash
@@ -256,7 +274,7 @@ def home():
 @require_role('Customer')
 def book_detail(book_id):
 
-    
+
     con = get_db_connection()
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -611,12 +629,98 @@ def get_authors():
     #same as above
     return  {'categories': [dict(author) for author in authors]}
         
+@app.route('/about')
+@require_role('Customer')
+def about():
+    return render_template('about.html')
+
+
+@app.route('/catalog', methods=['POST', 'GET']) 
+@require_role('Customer')
+def display_books():
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    sort_by = request.form.get('sort') or request.args.get('sort', 'title')
+    valid_sorts = {
+        'title': 'b.title',
+        'author_name': 'a.author_name', 
+        'price': 'b.price',
+        'category': 'c.category_name'
+    }
+    if sort_by not in valid_sorts:
+        sort_by = 'title'
+    
+    # Use parameterized query to prevent SQL injection
+    sort_column = valid_sorts[sort_by]
+    cur.execute(f"""
+        SELECT  b.title AS title, b.price AS price, b.image_id AS image_id,  a.author_name AS author_name, c.category_name AS category_name
+        FROM Book b
+        JOIN Author a ON b.author_id = a.author_id
+        JOIN Category c ON b.category_id = c.category_id
+        ORDER BY {sort_column} ASC
+    """)
+
+        
+    books = cur.fetchall()
+    cur.close()
+    con.close()
+    return render_template('catalog.html', all_books = books, sort_by = sort_by)
+    
+
+@app.errorhandler(404)
+def page_not_found(e):
+    # Handles "Page Not Found" errors.
+    return render_template(
+        'error.html',
+        error_code="404",
+        error_title="Page Not Found",
+        error_message="Sorry, the page you are looking for does not exist or has been moved."
+    ), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    # Handles "Internal Server Error" when the code crashes.
+    return render_template(
+        'error.html',
+        error_code="500",
+        error_title="Internal Server Error",
+        error_message="We're sorry, something went wrong on our end. We've been notified and are looking into it."
+    ), 500
+@app.route('/checkout', methods=['GET', 'POST'])
+@require_role('Customer')
+def checkout():
+    user_id = session.get('user_id')
+
+    if request.method == 'POST':
+        success, message = process_checkout_in_database(user_id)
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('home'))
+        else:
+            flash(f"An error occurred during checkout: {message}", 'error')
+            return redirect(url_for('view_cart'))
+
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("""
+        SELECT c.quantity, b.title, b.price, (c.quantity * b.price) as item_total
+        FROM Cart c JOIN Book b ON c.book_id = b.book_id WHERE c.user_id = %s
+    """, (user_id,))
+    cart_items = cur.fetchall()
+    cur.close()
+    con.close()
+
+    if not cart_items:
+        flash("Your cart is empty.", "info")
+        return redirect(url_for('view_cart'))
+
+    total = sum(item['item_total'] for item in cart_items)
+    return render_template('checkout.html', cart_items=cart_items, total=total)
 
 
 
 if __name__ == '__main__':
-
     start_db()
-        
 
     app.run(debug=True)
