@@ -8,6 +8,8 @@
 import os
 import psycopg2
 import psycopg2.extras
+import json
+import requests
 
 from dotenv import load_dotenv
 load_dotenv() # Load environment variables from .env file
@@ -43,6 +45,8 @@ def drop_tables():
     cursor.execute('DROP TABLE IF EXISTS Author CASCADE')
     cursor.execute('DROP TABLE IF EXISTS Category CASCADE')
     cursor.execute('DROP TABLE IF EXISTS Customers CASCADE')
+    cursor.execute('DROP TABLE IF EXISTS BookAuthors CASCADE')
+    cursor.execute('DROP TABLE IF EXISTS BookCategories CASCADE')
     print("Successfully dropped all tables.")
     
     conn.commit()
@@ -93,13 +97,20 @@ def create_tables_roles():
     cursor.execute('CREATE TABLE IF NOT EXISTS Book (' +
                 'book_id INT PRIMARY KEY, ' +
                 'title VARCHAR(100), ' +
-                'author_id INT, ' +
-                'category_id INT, ' +
                 'price INT, ' +
-                'image_id VARCHAR(100), ' + 
-                'uploaded_by VARCHAR(50) REFERENCES Users(user_id), ' +
-                'FOREIGN KEY(author_id) REFERENCES Author(author_id), ' +
-                'FOREIGN KEY(category_id) REFERENCES Category(category_id))')
+                'image_id VARCHAR(100), ' +
+                'short_description TEXT, ' +
+                'uploaded_by VARCHAR(50) REFERENCES Users(user_id))')
+
+    cursor.execute('CREATE TABLE IF NOT EXISTS BookAuthors (' +
+                   'book_id INT REFERENCES Book(book_id) ON DELETE CASCADE, ' +
+                   'author_id INT REFERENCES Author(author_id) ON DELETE CASCADE, ' +
+                   'PRIMARY KEY (book_id, author_id))')
+    
+    cursor.execute('CREATE TABLE IF NOT EXISTS BookCategories (' +
+                   'book_id INT REFERENCES Book(book_id) ON DELETE CASCADE, ' +
+                   'category_id INT REFERENCES Category(category_id) ON DELETE CASCADE, ' +
+                   'PRIMARY KEY (book_id, category_id))')
 
     cursor.execute('CREATE TABLE IF NOT EXISTS Customers (' +
                    'customer_id INT PRIMARY KEY, ' +
@@ -162,6 +173,7 @@ def create_tables_roles():
     conn.commit()
     cursor.close()
     conn.close()
+
 
 
 def assign_user_role(user_id, role):
@@ -272,28 +284,59 @@ def get_or_create_category(category_name):
         cur.close()
         con.close()
 
-#TODO: finish function
-def add_book_to_database(title, author_name, category_name, price, image_id, uploaded_by):
+def download_image_from_url(image_url, book_id, save_dir='static/images', default_image_id='default_book'):
+    if not image_url:
+        return default_image_id
+
+    try:
+        response = requests.get(image_url)
+        response.raise_for_status()
+
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        image_id = f'{book_id}.jpeg'
+        image_path = os.path.join(save_dir, image_id)
+        with open(image_path, 'wb') as f:
+            f.write(response.content)
+
+        return book_id
+    except Exception as e:
+        print(f'Error downloading image: {e}')
+        return default_image_id
+
+# in comboination with multiple people made this function
+def add_book_to_database(title, author_names, category_names, price, image_id, uploaded_by, short_description=None):
     con = get_db_connection()
     cur = con.cursor()
 
     try:
-        author_id = get_or_create_author(author_name)
-        category_id = get_or_create_category(category_name)
-
         cur.execute("SELECT COALESCE(MAX(book_id), 0) + 1 FROM Book")
         new_book_id = cur.fetchone()[0]
 
         if not image_id:
             image_id = 'default_book'
 
-        cur.execute("INSERT INTO Book (book_id, title, author_id, category_id, price, image_id, uploaded_by) VALUES (%s, %s, %s, %s, %s, %s, %s)", (new_book_id, title, author_id, category_id, price, image_id, uploaded_by))
+        cur.execute("INSERT INTO Book (book_id, title, price, image_id, uploaded_by, short_description) VALUES (%s, %s, %s, %s, %s, %s)", 
+                    (new_book_id, title, price, image_id, uploaded_by, short_description))
+        
+        # in case there is multiple authors
+        for author_name in author_names:
+            author_id = get_or_create_author(author_name.strip())
+            cur.execute("INSERT INTO BookAuthors (book_id, author_id) VALUES (%s, %s)", (new_book_id, author_id))
+
+        # in case there is multiple categories
+        for category_name in category_names:
+            category_id = get_or_create_category(category_name.strip())
+            cur.execute("INSERT INTO BookCategories (book_id, category_id) VALUES (%s, %s)", (new_book_id, category_id))
+
         cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, 1))
 
         con.commit()
-        return True, 'Book added!'
+        return True, 'Booked added'
     
     except Exception as e:
+        print(f"Error adding book: {e}")
         con.rollback()
         return False, str(e)
     finally:
@@ -380,14 +423,77 @@ def get_all_authors():
     con.close()
     return data
 
+
+def pop_from_json(filepath='dejiji.books.json'):
+    try:
+        with open(filepath, 'r') as f:
+            books_data = json.load(f)
+    except Exception as e:
+        print(f'Error loading JSON file: {e}')
+        return
+
+    con = get_db_connection()
+    cur = con.cursor()
     
-    
+    # dummy user to be the uploader for first 25 books
+    uploader_user_id = 'json_importer'
+    cur.execute("SELECT user_id FROM Users WHERE user_id = %s", (uploader_user_id,))
+    if not cur.fetchone():
+        cur.execute("INSERT INTO Users (user_id, email, first_name, last_name, password_hash, role) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (uploader_user_id, 'importer@system.com', 'JSON', 'Importer', 'nohash', 'Admin'))
+        con.commit()
+    for book in books_data[:25]:
+        try:
+            book_id = book.get('_id')
+            title = book.get('title')
+            authors = book.get('authors', [])
+            categories = book.get('categories', [])
+            short_desc = book.get('shortDescription')
+            image_url = book.get('thumbnailUrl')
+
+            if not all([book_id, title, authors, categories]):
+                continue
+
+            # check if that book already exists
+            cur.execute("SELECT book_id FROM Book WHERE book_id = %s", (book_id,))
+            if cur.fetchone():
+                continue
+
+            image_id = download_image_from_url(image_url, book_id)
+            # insert book with a default price of 20 and image_id as book_id for now
+            cur.execute("INSERT INTO Book (book_id, title, price, image_id, uploaded_by, short_description) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (book_id, title, 15, image_id, uploader_user_id, short_desc))
+
+            # insert authors and link to book
+            for author_name in authors:
+                if author_name:
+                    author_id = get_or_create_author(author_name)
+                    cur.execute("INSERT INTO BookAuthors (book_id, author_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (book_id, author_id))
+
+            # insert categories and link to book
+            for cat_name in categories:
+                if cat_name:
+                    category_id = get_or_create_category(cat_name)
+                    cur.execute("INSERT INTO BookCategories (book_id, category_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (book_id, category_id))
+            
+            cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s) ON CONFLICT DO NOTHING", (book_id, 10))
+
+        except Exception as e:
+            print(f"Error processing book ID {book.get('_id')}: {e}")
+            con.rollback()
+        else:
+            con.commit()
+    print("Finished populating database from JSON.")
+    cur.close()
+    con.close()
 
 def start_db():
     if input("Drop tables? y/n: ").lower() == 'y':
         drop_tables()
     initialize_db()
     create_tables_roles()
+    if input("Populate database from dejiji.books.json? y/n: ").lower() == 'y':
+        pop_from_json()
 
 if __name__ == '__main__':
     start_db()
