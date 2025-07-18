@@ -22,8 +22,8 @@
         background-color: #d1bfa7;
         display: flex;
         justify-content: center;
-        gap: 2em;
-        padding: 1em;
+        gap: 1em;
+        padding: .5em;
       }
       nav a {
         text-decoration: none;
@@ -109,7 +109,7 @@
     <nav>
       <a href="{{ url_for('home') }}">Home</a>
       <a href="{{ url_for('view_cart') }}">Cart</a>
-      <a href="/catalog">Browse Books</a>
+      <a href="{{url_for('catalog')}}">Browse Books</a>
       <a href="/categories">Categories</a>
       <a href="{{ url_for('search') }}">Search</a>
       <a href="{{url_for('about')}}">About</a>
