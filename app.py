@@ -599,22 +599,27 @@ def get_authors():
 def about():
     return render_template('about.html')
 
-@app.route('/catalog')
+@app.route('/catalog', methods=['POST']) 
 @require_role('Customer')
 def display_books():
     con = get_db_connection()
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    sort_by = request.form.get('sort', 'title')
 
-    cur.execute("""
-        SELECT  b.title, b.price, b.image_id, a.author_name, c.category_name 
+    cur.execute(f"""
+        SELECT  b.title AS title, b.price AS price, b.image_id, a.author_name AS author_name, c.category_name AS category_name
         FROM Book b
         JOIN Author a ON b.author_id = a.author_id
         JOIN Category c ON b.category_id = c.category_id
+        ORDER BY {sort_by}
     """)
+
+        
     books = cur.fetchall()
     cur.close()
     con.close()
-    return render_template('catalog.html', all_books = books)
+    return render_template('catalog.html', all_books = books, sort_by = sort_by)
     
 
 
