@@ -599,20 +599,30 @@ def get_authors():
 def about():
     return render_template('about.html')
 
-@app.route('/catalog', methods=['POST']) 
+@app.route('/catalog', methods=['POST', 'GET']) 
 @require_role('Customer')
 def display_books():
     con = get_db_connection()
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
-    sort_by = request.form.get('sort', 'title')
-
+    sort_by = request.form.get('sort') or request.args.get('sort', 'title')
+    valid_sorts = {
+        'title': 'b.title',
+        'author_name': 'a.author_name', 
+        'price': 'b.price',
+        'category': 'c.category_name'
+    }
+    if sort_by not in valid_sorts:
+        sort_by = 'title'
+    
+    # Use parameterized query to prevent SQL injection
+    sort_column = valid_sorts[sort_by]
     cur.execute(f"""
-        SELECT  b.title AS title, b.price AS price, b.image_id, a.author_name AS author_name, c.category_name AS category_name
+        SELECT  b.title AS title, b.price AS price, b.image_id AS image_id,  a.author_name AS author_name, c.category_name AS category_name
         FROM Book b
         JOIN Author a ON b.author_id = a.author_id
         JOIN Category c ON b.category_id = c.category_id
-        ORDER BY {sort_by}
+        ORDER BY {sort_column} ASC
     """)
 
         

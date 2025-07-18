@@ -113,12 +113,12 @@
     </nav>
 
     <main>
-        <form method="post" style="text-align: right; margin-bottom: 1em;">
+        <form method="get" style="text-align: right; margin-bottom: 1em;">
             <label for="sort"><strong>Sort by:</strong></label>
             <select name="sort" id="sort" onchange="this.form.submit()">
                 <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title</option>
                 <option value="author_name" {% if sort_by == 'author_name' %}selected{% endif %}>Author</option>
-                <option value="category" {% if sort_by == 'category' %}selected{% endif %}>Category</option>
+                <option value="category" {% if sort_by == 'category_name' %}selected{% endif %}>Category</option>
                 <option value="price" {% if sort_by == 'price' %}selected{% endif %}>Price</option>
             </select>
         </form>
@@ -128,7 +128,7 @@
                 <img src="/static/images/{{ book.image_id }}.jpeg" />
                 <div class="book-title">{{ book.title }}</div>
                 <div class="book-author">by {{ book.author_name }}</div>
-                <div class="book-category">Category: {{ book.category }}</div>
+                <div class="book-category">Category: {{ book.category_name }}</div>
                 <div class="book-price">${{ "%.2f"|format(book.price) }}</div>
             </div>
             {% endfor %}
