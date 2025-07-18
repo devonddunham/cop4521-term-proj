@@ -9,6 +9,7 @@ import os
 import psycopg2
 import psycopg2.extras
 import json
+import requests
 
 from dotenv import load_dotenv
 load_dotenv() # Load environment variables from .env file
@@ -174,44 +175,6 @@ def create_tables_roles():
     conn.close()
 
 
-# devon dunham
-# add books to db
-def add_book_to_database(title, author_names, category_names, price, image_id, uploaded_by, short_description=None):
-    con = get_db_connection()
-    cur = con.cursor()
-
-    try:
-        cur.execute("SELECT COALESCE(MAX(book_id), 0) + 1 FROM Book")
-        new_book_id = cur.fetchone()[0]
-
-        if not image_id:
-            image_id = 'default_book'
-
-        cur.execute("INSERT INTO Book (book_id, title, price, image_id, uploaded_by, short_description) VALUES (%s, %s, %s, %s, %s, %s)", 
-                    (new_book_id, title, price, image_id, uploaded_by, short_description))
-        
-        # in case there is multiple authors
-        for author_name in author_names:
-            author_id = get_or_create_author(author_name.strip())
-            cur.execute("INSERT INTO BookAuthors (book_id, author_id) VALUES (%s, %s)", (new_book_id, author_id))
-
-        # in case there is multiple categories
-        for category_name in category_names:
-            category_id = get_or_create_category(category_name.strip())
-            cur.execute("INSERT INTO BookCategories (book_id, category_id) VALUES (%s, %s)", (new_book_id, category_id))
-
-        cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, 1))
-
-        con.commit()
-        return True
-    
-    except Exception as e:
-        print(f"Error adding book: {e}")
-        con.rollback()
-        return False
-    finally:
-        cur.close()
-        con.close()
 
 def assign_user_role(user_id, role):
     con = get_db_connection()
@@ -321,33 +284,64 @@ def get_or_create_category(category_name):
         cur.close()
         con.close()
 
-#TODO: finish function
-# def add_book_to_database(title, author_name, category_name, price, image_id, uploaded_by):
-#     con = get_db_connection()
-#     cur = con.cursor()
+def download_image_from_url(image_url, book_id, save_dir='static/images', default_image_id='default_book'):
+    if not image_url:
+        return default_image_id
 
-#     try:
-#         author_id = get_or_create_author(author_name)
-#         category_id = get_or_create_category(category_name)
+    try:
+        response = requests.get(image_url)
+        response.raise_for_status()
 
-#         cur.execute("SELECT COALESCE(MAX(book_id), 0) + 1 FROM Book")
-#         new_book_id = cur.fetchone()[0]
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
-#         if not image_id:
-#             image_id = 'default_book'
+        image_id = f'{book_id}.jpeg'
+        image_path = os.path.join(save_dir, image_id)
+        with open(image_path, 'wb') as f:
+            f.write(response.content)
 
-#         cur.execute("INSERT INTO Book (book_id, title, author_id, category_id, price, image_id, uploaded_by) VALUES (%s, %s, %s, %s, %s, %s, %s)", (new_book_id, title, author_id, category_id, price, image_id, uploaded_by))
-#         cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, 1))
+        return book_id
+    except Exception as e:
+        print(f'Error downloading image: {e}')
+        return default_image_id
 
-#         con.commit()
-#         return True, 'Book added!'
+# in comboination with multiple people made this function
+def add_book_to_database(title, author_names, category_names, price, image_id, uploaded_by, short_description=None):
+    con = get_db_connection()
+    cur = con.cursor()
+
+    try:
+        cur.execute("SELECT COALESCE(MAX(book_id), 0) + 1 FROM Book")
+        new_book_id = cur.fetchone()[0]
+
+        if not image_id:
+            image_id = 'default_book'
+
+        cur.execute("INSERT INTO Book (book_id, title, price, image_id, uploaded_by, short_description) VALUES (%s, %s, %s, %s, %s, %s)", 
+                    (new_book_id, title, price, image_id, uploaded_by, short_description))
+        
+        # in case there is multiple authors
+        for author_name in author_names:
+            author_id = get_or_create_author(author_name.strip())
+            cur.execute("INSERT INTO BookAuthors (book_id, author_id) VALUES (%s, %s)", (new_book_id, author_id))
+
+        # in case there is multiple categories
+        for category_name in category_names:
+            category_id = get_or_create_category(category_name.strip())
+            cur.execute("INSERT INTO BookCategories (book_id, category_id) VALUES (%s, %s)", (new_book_id, category_id))
+
+        cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, 1))
+
+        con.commit()
+        return True, 'Booked added'
     
-#     except Exception as e:
-#         con.rollback()
-#         return False, str(e)
-#     finally:
-#         cur.close()
-#         con.close()
+    except Exception as e:
+        print(f"Error adding book: {e}")
+        con.rollback()
+        return False, str(e)
+    finally:
+        cur.close()
+        con.close()
 
 def delete_book_from_database(book_id, user_id, user_role):
     con = get_db_connection()
@@ -412,20 +406,21 @@ def pop_from_json(filepath='dejiji.books.json'):
     con = get_db_connection()
     cur = con.cursor()
     
-    # dummy user to be the uploader
+    # dummy user to be the uploader for first 25 books
     uploader_user_id = 'json_importer'
     cur.execute("SELECT user_id FROM Users WHERE user_id = %s", (uploader_user_id,))
     if not cur.fetchone():
         cur.execute("INSERT INTO Users (user_id, email, first_name, last_name, password_hash, role) VALUES (%s, %s, %s, %s, %s, %s)",
                     (uploader_user_id, 'importer@system.com', 'JSON', 'Importer', 'nohash', 'Admin'))
         con.commit()
-    for book in books_data:
+    for book in books_data[:25]:
         try:
             book_id = book.get('_id')
             title = book.get('title')
             authors = book.get('authors', [])
             categories = book.get('categories', [])
             short_desc = book.get('shortDescription')
+            image_url = book.get('thumbnailUrl')
 
             if not all([book_id, title, authors, categories]):
                 continue
@@ -435,9 +430,10 @@ def pop_from_json(filepath='dejiji.books.json'):
             if cur.fetchone():
                 continue
 
+            image_id = download_image_from_url(image_url, book_id)
             # insert book with a default price of 20 and image_id as book_id for now
             cur.execute("INSERT INTO Book (book_id, title, price, image_id, uploaded_by, short_description) VALUES (%s, %s, %s, %s, %s, %s)",
-                        (book_id, title, 20, str(book_id), uploader_user_id, short_desc))
+                        (book_id, title, 15, image_id, uploader_user_id, short_desc))
 
             # insert authors and link to book
             for author_name in authors:

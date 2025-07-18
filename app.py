@@ -222,7 +222,7 @@ def home():
 
     # use STRING_AGG to combine multiple authors into a single string
     cursor.execute("""        
-        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_name
+        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_names
         FROM Book b
         JOIN BookAuthors ba ON b.book_id = ba.book_id
         JOIN Author a ON ba.author_id = a.author_id
@@ -234,7 +234,7 @@ def home():
     books_under_20 = cursor.fetchall()
 
     cursor.execute("""        
-        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_name
+        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_names
         FROM Book b
         JOIN BookAuthors ba ON b.book_id = ba.book_id
         JOIN Author a ON ba.author_id = a.author_id
