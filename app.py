@@ -43,7 +43,12 @@ def require_role(required_role):
             if not check_user_permission(user_id, required_role):
                 user_role = get_user_role(user_id)
                 flash(f'ACCESS DENIED! Required role: {required_role}')
-                return redirect(url_for('home'))
+                if user_role == 'Vendor':
+                    return redirect(url_for('vendor_dashboard'))
+                elif user_role == 'Employee':
+                    return redirect(url_for('employee_dashboard'))
+                else:
+                    return redirect(url_for('login'))
             
             return f(*args, **kwargs)
         return decorated_function
@@ -217,8 +222,18 @@ def logout():
 @require_role('Customer')
 def home():
 
+    user_id = session.get('user_id')
+
+
     con = get_db_connection()
     cursor = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute("SELECT first_name FROM Users WHERE user_id = %s", (user_id,))
+    
+
+    name = cursor.fetchone()
+
+    Hello = "Hello, " + name[0]
 
     cursor.execute("""        
         SELECT b.book_id, b.title, b.price, b.image_id, a.author_name
@@ -243,7 +258,10 @@ def home():
     cursor.close()
     con.close()
 
-    return render_template('home.html', books_under_10 = books_under_10, books_under_20 = books_under_20)
+    if get_current_user_role() == 'Vendor':
+        return render_template('vendorHome.html', books_under_10 = books_under_10, books_under_20 = books_under_20, Hello=Hello)
+    else:
+        return render_template('home.html', books_under_10 = books_under_10, books_under_20 = books_under_20, Hello=Hello)
 
 #this is similar to a React component, it will be used across the webiste
 #when a user clicks on a book, this will flash
@@ -251,7 +269,7 @@ def home():
 @require_role('Customer')
 def book_detail(book_id):
 
-    
+
     con = get_db_connection()
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -686,8 +704,6 @@ def checkout():
 
 
 if __name__ == '__main__':
-
     start_db()
-        
 
     app.run(debug=True)
