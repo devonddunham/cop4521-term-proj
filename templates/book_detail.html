@@ -22,8 +22,8 @@
             background-color: #d1bfa7;
             display: flex;
             justify-content: center;
-            gap: 2em;
-            padding: 1em;
+            gap: 1em;
+            padding: .5em;
         }
         nav a {
             text-decoration: none;
@@ -115,48 +115,50 @@
 </head>
 <body>
 
-<header>
-    <h1>Dejiji Bookstore</h1>
-</header>
+    <header>
+        <h1>Dejiji Bookstore</h1>
+    </header>
 
-<nav>
-    <a href="{{ url_for('home') }}">Home</a>
-    <a href="{{ url_for('view_cart') }}">Cart</a>
-    <a href="/catalog">Browse Books</a>
-    <a href="/categories">Categories</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
-</nav>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('view_cart') }}">Cart</a>
+        <a href="{{url_for('display_books')}}">Browse Books</a>
+        <a href="/categories">Categories</a>
+        <a href="{{ url_for('search') }}">Search</a>
+        <a href="{{url_for('about')}}">About</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
 
-<div class="flash-messages">
-    {% with messages = get_flashed_messages(with_categories=true) %}
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash-{{ category }}">{{ message }}</div>
-            {% endfor %}
+        {% for category, message in messages %}
+        <div class="flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
         {% endif %}
-    {% endwith %}
-</div>
-
-<div class="book-detail">
-    <div class="book-image-container">
-        <img src="/static/images/{{ book.image_id }}.jpeg" alt="{{ book.title }}" class="book-image-large">
+        {% endwith %}
     </div>
-    
-    <div class="book-info">
-        <h1>{{ book.title }}</h1>
-        <div class="author">by {{ book.author_name }}</div>
-        <div class="category">Category: {{ book.category_name }}</div>
-        <div class="price">${{ book.price }}</div>
-        
-        <form method="POST" action="{{ url_for('add_to_cart', book_id=book.book_id) }}" class="add-to-cart-form">
-            <label for="quantity">Quantity:</label>
-            <input type="number" id="quantity" name="quantity" value="1" min="1" max="10" class="quantity-input">
-            <button type="submit" class="add-to-cart-btn">Add to Cart</button>
-        </form>
-    </div>
-</div>
 
-<a href="{{ url_for('home') }}" class="back-link">← Back to Books</a>
+    <div class="book-detail">
+        <div class="book-image-container">
+            <img src="/static/images/{{ book.image_id }}.jpeg" alt="{{ book.title }}" class="book-image-large">
+        </div>
+
+        <div class="book-info">
+            <h1>{{ book.title }}</h1>
+            <div class="author">by {{ book.author_name }}</div>
+            <div class="category">Category: {{ book.category_name }}</div>
+            <div class="price">${{ book.price }}</div>
+
+            <form method="POST" action="{{ url_for('add_to_cart', book_id=book.book_id) }}" class="add-to-cart-form">
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" value="1" min="1" max="10" class="quantity-input">
+                <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+            </form>
+        </div>
+    </div>
+
+    <a href="{{ url_for('home') }}" class="back-link">← Back to Books</a>
 
 </body>
 </html>
