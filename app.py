@@ -352,13 +352,23 @@ def view_cart():
     con = get_db_connection()
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    # update command using the new DB schema
     cur.execute("""
-        SELECT c.cart_id, c.quantity, b.book_id, b.title, b.price, b.image_id, a.author_name,
-               (c.quantity * b.price) as item_total
+        SELECT
+            c.cart_id,
+            c.quantity,
+            b.book_id,
+            b.title,
+            b.price,
+            b.image_id,
+            (c.quantity * b.price) as item_total,
+            STRING_AGG(a.author_name, ', ') as author_names
         FROM Cart c
         JOIN Book b ON c.book_id = b.book_id
-        JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+        LEFT JOIN Author a ON ba.author_id = a.author_id
         WHERE c.user_id = %s
+        GROUP BY c.cart_id, b.book_id
         ORDER BY c.added_at DESC
     """, (user_id,))
 
@@ -644,20 +654,30 @@ def display_books():
     sort_by = request.form.get('sort') or request.args.get('sort', 'title')
     valid_sorts = {
         'title': 'b.title',
-        'author_name': 'a.author_name', 
+        'author_names': 'author_names', 
         'price': 'b.price',
-        'category': 'c.category_name'
+        'category_names': 'category_names'
     }
     if sort_by not in valid_sorts:
         sort_by = 'title'
     
     # Use parameterized query to prevent SQL injection
+    # updated command to reflect new DB schema
     sort_column = valid_sorts[sort_by]
     cur.execute(f"""
-        SELECT  b.title AS title, b.price AS price, b.image_id AS image_id,  a.author_name AS author_name, c.category_name AS category_name
+        SELECT 
+            b.book_id,
+            b.title, 
+            b.price, 
+            b.image_id,  
+            STRING_AGG(DISTINCT a.author_name, ', ') AS author_names, 
+            STRING_AGG(DISTINCT c.category_name, ', ') AS category_names
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
-        JOIN Category c ON b.category_id = c.category_id
+        LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+        LEFT JOIN Author a ON ba.author_id = a.author_id
+        LEFT JOIN BookCategories bc ON b.book_id = bc.book_id
+        LEFT JOIN Category c ON bc.category_id = c.category_id
+        GROUP BY b.book_id
         ORDER BY {sort_column} ASC
     """)
 
