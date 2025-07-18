@@ -282,6 +282,8 @@
 
             <div class="cart-summary">
                 <div class="cart-total">Total: ${{ total }}</div>
+                <!-- THIS IS THE NEW BUTTON YOU NEED -->
+                <a href="{{ url_for('checkout') }}" class="checkout-btn">Proceed to Checkout</a>
                 <a href="{{ url_for('home') }}" class="continue-shopping">Continue Shopping</a>
             </div>
 
