@@ -118,7 +118,7 @@ def create_tables_roles():
 
     cursor.execute('CREATE TABLE IF NOT EXISTS Inventory (book_id INT PRIMARY KEY, Quantity INTEGER, FOREIGN KEY(book_id) REFERENCES Book(book_id))')
     cursor.execute('CREATE TABLE IF NOT EXISTS Transactions (' +
-                'transaction_id INT PRIMARY KEY, ' +
+                'transaction_id SERIAL PRIMARY KEY, ' +    #entered 'Serial' for increasing counter
                 'transaction_total INT, ' + 
                 'transaction_date DATE, ' + 
                 'customer_id INT, ' +
@@ -386,9 +386,14 @@ def process_checkout_in_database(user_id):
 
         total_price = sum(item['quantity'] * item['price'] for item in cart_items)
 
+        #adding below
+        cur.execute("SELECT customer_id FROM Customers INNER JOIN Users ON Customers.customer_name = (Users.first_name || ' ' || Users.last_name)")
+        new_id = cur.fetchone()
+        ### now new thing is transactions isn't working
+
         cur.execute(
             "INSERT INTO Transactions (transaction_total, transaction_date, customer_id) VALUES (%s, CURRENT_DATE, %s)",
-            (total_price, user_id)
+            (total_price, new_id)  #changed user_id to new_id
         )
 
         cur.execute("DELETE FROM Cart WHERE user_id = %s", (user_id,))
