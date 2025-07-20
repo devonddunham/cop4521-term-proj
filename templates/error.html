@@ -1,0 +1,73 @@
+<!--From Copilot-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>We're Sorry...</title>
+    <style>
+        body {
+        margin: 0;
+        padding: 0;
+        font-family: Georgia, serif;
+        background-color: #f9f6f1;
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        }
+
+        .error-container {
+        text-align: center;
+        padding: 40px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+    .error-code {
+        font-size: 5em;
+        color: #d9534f;
+        margin: 0;
+    }
+
+    .error-title {
+        font-size: 2em;
+        margin: 10px 0;
+    }
+
+    .error-message {
+        font-size: 1.2em;
+        margin-bottom: 30px;
+    }
+
+    .return-link {
+        text-decoration: none;
+        background-color: #0275d8;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 1em;
+        transition: background-color 0.3s ease;
+    }
+
+    .return-link:hover {
+        background-color: #025aa5;
+    }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-code">{{ error_code }}</div>
+        <div class="error-title">{{ error_title }}</div>
+        <div class="error-message">{{ error_message }}</div>
+        <a href="{{ url_for('home') }}" class="return-link">Back to Home</a>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 DEJIJI. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
