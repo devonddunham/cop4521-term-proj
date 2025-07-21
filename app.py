@@ -452,33 +452,61 @@ def remove_from_cart():
 @app.route('/search', methods=['GET', 'POST'])
 @require_role('Customer')
 def search():
+    print("DEBUG: request.method =", request.method)
+    print("DEBUG: request.form keys =", list(request.form.keys()))
+    print("DEBUG: request.form contents =", request.form.to_dict())
     books = []
     query = ''
+    search_type = ''
     if request.method == 'POST':
-        query = request.form.get('query', '').strip()
-        if query:
-            con = get_db_connection()
-            cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        if 'search_by_title_author' in request.form:
+            query = request.form.get('query', '').strip()
+            search_type = 'Title/Author'
+            if query:
+                con = get_db_connection()
+                cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-            # search by title or author name, case insensitive, partial matches (LIKE query), or STRING_AGG for multiple authors
-            cur.execute("""
-                SELECT b.book_id, b.title, b.price, b.image_id, b.short_description, STRING_AGG(a.author_name, ', ') as author_names
-                FROM Book b
-                JOIN BookAuthors ba ON b.book_id = ba.book_id
-                JOIN Author a ON ba.author_id = a.author_id
-                GROUP BY b.book_id
-                HAVING LOWER(b.title) LIKE %s OR LOWER(STRING_AGG(a.author_name, ', ')) LIKE %s
-                ORDER BY b.title ASC
-            """, (f'%{query.lower()}%', f'%{query.lower()}%'))
+                # search by title or author name, case insensitive, partial matches (LIKE query), or STRING_AGG for multiple authors
+                cur.execute("""
+                    SELECT b.book_id, b.title, b.price, b.image_id, b.short_description, STRING_AGG(a.author_name, ', ') as author_names
+                    FROM Book b
+                    JOIN BookAuthors ba ON b.book_id = ba.book_id
+                    JOIN Author a ON ba.author_id = a.author_id
+                    GROUP BY b.book_id
+                    HAVING LOWER(b.title) LIKE %s OR LOWER(STRING_AGG(a.author_name, ', ')) LIKE %s
+                    ORDER BY b.title ASC
+                """, (f'%{query.lower()}%', f'%{query.lower()}%'))
 
-            books = cur.fetchall()
-            cur.close()
-            con.close()
-        else:
-            flash('Please enter a search term', 'error')
+                books = cur.fetchall()
+                cur.close()
+                con.close()
+            else:
+                flash('Please enter a search term', 'error')
+        elif 'search_by_category' in request.form:
+            query = request.form.get('category_query', '').strip()
+            search_type = 'Category'
+            if query:
+                con = get_db_connection()
+                cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+                # query for searching by category
+                cur.execute("""
+                    SELECT b.book_id, b.title, b.price, b.image_id, b.short_description, STRING_AGG(a.author_name, ', ') as author_names
+                    FROM Book b
+                    LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+                    LEFT JOIN Author a     ON ba.author_id = a.author_id
+                    JOIN BookCategories bc ON b.book_id = bc.book_id
+                    JOIN Category c ON bc.category_id = c.category_id
+                    WHERE LOWER(c.category_name) LIKE %s
+                    GROUP BY b.book_id
+                    ORDER BY b.title ASC
+                """, (f'%{query.lower()}%',))
+                books = cur.fetchall()
+                cur.close()
+                con.close()
+            else:
+                flash('Please enter a search term for Category.', 'error')
 
-    return render_template('searchbooks.html', books=books, query=query)
-
+    return render_template('searchbooks.html', books=books, query=query, search_type=search_type)
 
 
 #dashboards:
@@ -650,7 +678,8 @@ def about():
 def display_books():
     con = get_db_connection()
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    
+
+
     sort_by = request.form.get('sort') or request.args.get('sort', 'title')
     valid_sorts = {
         'title': 'b.title',
