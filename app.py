@@ -452,9 +452,6 @@ def remove_from_cart():
 @app.route('/search', methods=['GET', 'POST'])
 @require_role('Customer')
 def search():
-    print("DEBUG: request.method =", request.method)
-    print("DEBUG: request.form keys =", list(request.form.keys()))
-    print("DEBUG: request.form contents =", request.form.to_dict())
     books = []
     query = ''
     search_type = ''
