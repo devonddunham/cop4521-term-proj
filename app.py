@@ -764,7 +764,39 @@ def checkout():
     total = sum(item['item_total'] for item in cart_items)
     return render_template('checkout.html', cart_items=cart_items, total=total)
 
+@app.route('/support', methods=['GET', 'POST'])
+@require_role('Customer')
+def support():
+    user_id = session.get('user_id')
+    if request.method == 'POST':
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
 
+        con = get_db_connection()
+        cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        try:
+            if not subject or not message:
+                flash('Both subject and mess are required.','error')
+                return render_template('support.html', subject=subject, message=message)
+            cur.execute(
+            """
+            INSERT INTO SupportTicket (user_id, subject, message)
+            VALUES (%s, %s, %s)
+            """,
+            (user_id, subject, message)
+            )
+            con.commit()
+            flash("Your support ticket has been sent!","success")
+        except Exception as e:
+            con.rollback()
+            flash('Error submitting ticket. Please try again.', 'error')
+
+        finally:
+            cur.close()
+            con.close()
+        # refresh page so user cannot resubmit the same form
+        return redirect(url_for('support'))
+    return render_template('support.html')
 
 if __name__ == '__main__':
     start_db()
