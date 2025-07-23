@@ -504,12 +504,9 @@ def pop_from_json(filepath='dejiji.books.json'):
     con.close()
 
 def start_db():
-    if input("Drop tables? y/n: ").lower() == 'y':
-        drop_tables()
     initialize_db()
     create_tables_roles()
-    if input("Populate database from dejiji.books.json? y/n: ").lower() == 'y':
-        pop_from_json()
+    pop_from_json()
 
 if __name__ == '__main__':
     start_db()
