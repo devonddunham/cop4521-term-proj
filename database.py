@@ -47,6 +47,7 @@ def drop_tables():
     cursor.execute('DROP TABLE IF EXISTS Customers CASCADE')
     cursor.execute('DROP TABLE IF EXISTS BookAuthors CASCADE')
     cursor.execute('DROP TABLE IF EXISTS BookCategories CASCADE')
+    cursor.execute('DROP TABLE IF EXISTS SupportTicket CASCADE')
     print("Successfully dropped all tables.")
     
     conn.commit()
@@ -133,6 +134,16 @@ def create_tables_roles():
                'quantity INT DEFAULT 1, ' +
                'added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
                'UNIQUE(user_id, book_id))')
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS SupportTicket (
+            ticket_id   SERIAL PRIMARY KEY,
+            user_id     VARCHAR(50) REFERENCES Users(user_id),
+            subject     VARCHAR(150)      NOT NULL,
+            message     TEXT              NOT NULL,
+            status      VARCHAR(20)       NOT NULL DEFAULT 'Open',
+            created_at  TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )""")
+
     
     #create role customer
     cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = 'Customer'")

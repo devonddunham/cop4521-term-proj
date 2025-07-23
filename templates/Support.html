@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Support – Dejiji Bookstore</title>
+    <style>
+        body { font-family: Georgia, serif; background-color: #f9f6f1; color: #333; margin: 0; padding: 0; }
+        header { background-color: #5c4033; color: white; padding: 1.5em 0; text-align: center; }
+        nav { background-color: #d1bfa7; display: flex; justify-content: center; gap: 2em; padding: 1em; }
+        nav a { text-decoration: none; color: #3e2f23; font-weight: bold; }
+        .container { max-width: 800px; margin: 2em auto; padding: 2em; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { color: #5c4033; margin-top: 0; }
+        .form-group { margin-bottom: 1em; }
+        .form-group label { display: block; margin-bottom: 0.5em; font-weight: bold; }
+        .form-group input,
+        .form-group textarea { width: 100%; padding: 0.8em; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+        .form-group textarea { height: 150px; resize: vertical; }
+        .submit-btn { background-color: #5c4033; color: white; border: none; padding: 0.8em 1.5em; border-radius: 4px; cursor: pointer; font-size: 1em; }
+        .flashes { list-style: none; padding: 0; margin: 1em 0; }
+        .flash { padding: 0.8em; border-radius: 4px; margin-bottom: 0.5em; }
+        .flash.error { background: #f8d7da; color: #842029; }
+        .flash.success { background: #d1e7dd; color: #0f5132; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Customer Support</h1>
+</header>
+<nav>
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('view_cart') }}">Cart</a>
+    <a href="{{ url_for('display_books') }}">Browse Books</a>
+    <a href="{{ url_for('search') }}">Search</a>
+    <a href="{{ url_for('support') }}">Support</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</nav>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+            <li class="flash {{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <h2>Submit a Support Ticket</h2>
+    <form method="POST" action="{{ url_for('support') }}">
+        <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" placeholder="Brief summary of your issue">
+        </div>
+        <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="Describe your problem or question in detail"></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Send Ticket</button>
+    </form>
+</div>
+
+</body>
+</html>
