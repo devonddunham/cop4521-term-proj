@@ -408,6 +408,18 @@ def process_checkout_in_database(user_id):
             (total_price, new_id)  #changed user_id to new_id
         )
 
+    #updating inventory here, test if user asks for more than stock, works
+        for item in cart_items:
+            bookId = item['book_id']
+            quantity = item['quantity']
+            cur.execute("SELECT Quantity FROM Inventory WHERE book_id=%s",(bookId,))
+            inventory = cur.fetchone()['quantity']
+
+            if inventory < quantity:
+                return False, "We're sorry, we don't have enough in stock for your purchase"
+            
+            cur.execute("UPDATE Inventory SET Quantity = Quantity-%s WHERE book_id=%s", (quantity, bookId))
+        
         cur.execute("DELETE FROM Cart WHERE user_id = %s", (user_id,))
 
         con.commit()
