@@ -7,16 +7,26 @@ import os # for uploading files and managing on system
 from werkzeug.utils import secure_filename # hell yeah worktrain
 import uuid 
 
-initialize_db()
-create_tables_roles()
-pop_from_json()
+
 app = Flask(__name__)
 app.secret_key = 'wubahubalub3456765' #no one guessing ts
 
 
-UPLOAD_FOLDER = 'static/images'
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.before_first_request
+def init_everything():
+    existing = set(os.listdir(UPLOAD_FOLDER))
+
+    defaults = {'default_book.jpeg', 'sharanya_as_patrick.jpeg'}
+    if existing == defaults:
+        drop_tables()
+        initialize_db()
+        create_tables_roles()
+        pop_from_json()
 
 """In check_user_permission() in database.py, I assigned each role to a number
 Customer = 1, Vendor = 2, Employee = 3, Admin = 4

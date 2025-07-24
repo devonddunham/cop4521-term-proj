@@ -304,11 +304,12 @@ def download_image_from_url(image_url, book_id, save_dir='static/images', defaul
         response = requests.get(image_url)
         response.raise_for_status()
 
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        base = os.path.dirname(__file__)
+        target = os.path.join(base, save_dir)
+        os.makedirs(target, exist_ok=True)
 
         image_id = f'{book_id}.jpeg'
-        image_path = os.path.join(save_dir, image_id)
+        image_path = os.path.join(target, image_id)
         with open(image_path, 'wb') as f:
             f.write(response.content)
 
