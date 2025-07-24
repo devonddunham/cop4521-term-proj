@@ -172,7 +172,9 @@
                         <td>{{ book.uploaded_by_name or 'N/A' }}</td>
                         <td>
                             <a href="#" class="btn btn-edit">Edit</a>
-                            <a href="#" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
+                                <form method="POST" action="{{ url_for('delete_book', book_id=book.book_id) }}" style="display: inline;">
+                                    <a href="#" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
+                                </form>
                         </td>
                     </tr>
                     {% endfor %}

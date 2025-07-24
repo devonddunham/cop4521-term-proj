@@ -642,7 +642,7 @@ def delete_book(book_id):
     user_id = session['user_id']
     user_role = get_current_user_role()
 
-    success, message = delete_book_from_database(book_id, user_id, user_role)
+    success = delete_book_from_database(book_id, user_id, user_role)
 
     if success:
         flash("Book deleted!")
