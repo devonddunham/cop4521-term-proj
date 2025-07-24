@@ -6,13 +6,14 @@ from functools import wraps
 import os # for uploading files and managing on system
 from werkzeug.utils import secure_filename # hell yeah worktrain
 import uuid 
+import shutil
 
 
 app = Flask(__name__)
 app.secret_key = 'wubahubalub3456765' #no one guessing ts
 
-
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'images')
+BASE = os.path.dirname(__file__)
+UPLOAD_FOLDER = os.path.join(BASE, 'static', 'images')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -21,13 +22,15 @@ _initialized = False
 
 @app.before_request
 def init_everything():
-
     global _initialized
     if not _initialized:
-        existing = set(os.listdir(UPLOAD_FOLDER))
-
-        defaults = {'default_book.jpeg', 'sharanya_as_patrick.jpeg'}
-        if existing == defaults:
+        if not os.listdir(UPLOAD_FOLDER):
+            backup = os.path.join(BASE, '.static_backup')
+            for fname in os.listdir(backup):
+                shutil.copy(
+                    os.path.join(backup, fname),
+                    os.path.join(UPLOAD_FOLDER, fname)
+                )
             drop_tables()
             initialize_db()
             create_tables_roles()
