@@ -419,6 +419,17 @@ def process_checkout_in_database(user_id):
                 return False, "We're sorry, we don't have enough in stock for your purchase"
             
             cur.execute("UPDATE Inventory SET Quantity = Quantity-%s WHERE book_id=%s", (quantity, bookId))
+
+            cur.execute("SELECT Quantity FROM Inventory WHERE book_id=%s", (bookId,))
+            new_inventory = cur.fetchone()['quantity']
+            
+            if new_inventory <= 0:
+                # Remove book entirely when quantity reaches 0
+                cur.execute("DELETE FROM Inventory WHERE book_id = %s", (bookId,))
+                cur.execute("DELETE FROM Cart WHERE book_id = %s", (bookId,))
+                cur.execute("DELETE FROM BookAuthors WHERE book_id = %s", (bookId,))
+                cur.execute("DELETE FROM BookCategories WHERE book_id = %s", (bookId,))
+                cur.execute("DELETE FROM Book WHERE book_id = %s", (bookId,))
         
         cur.execute("DELETE FROM Cart WHERE user_id = %s", (user_id,))
 
@@ -487,8 +498,8 @@ def pop_from_json(filepath='dejiji.books.json'):
             cur.execute("SELECT book_id FROM Book WHERE book_id = %s", (book_id,))
             if cur.fetchone():
                 continue
-            rand = lambda: random.randint(5, 35)
-            price = rand()
+            price_rand = lambda: random.randint(5, 35)
+            price = price_rand()
             image_id = download_image_from_url(image_url, book_id)
             # insert book with a default price of 20 and image_id as book_id for now
             cur.execute("INSERT INTO Book (book_id, title, price, image_id, uploaded_by, short_description) VALUES (%s, %s, %s, %s, %s, %s)",
@@ -506,7 +517,9 @@ def pop_from_json(filepath='dejiji.books.json'):
                     category_id = get_or_create_category(cat_name)
                     cur.execute("INSERT INTO BookCategories (book_id, category_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (book_id, category_id))
             
-            cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s) ON CONFLICT DO NOTHING", (book_id, 10))
+            quant_rand = lambda: random.randint(5, 20)
+            quant = quant_rand()
+            cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s) ON CONFLICT DO NOTHING", (book_id, quant))
 
         except Exception as e:
             print(f"Error processing book ID {book.get('_id')}: {e}")

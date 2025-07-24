@@ -90,6 +90,11 @@
         font-weight: bold;
         font-size: 1.1em;
       }
+      .book-quantity {
+        color: #666;
+        font-style: italic;
+        margin: 0.3em 0;
+      }
       footer {
         text-align: center;
         padding: 1em;
@@ -142,6 +147,7 @@
               />
               <div class="book-title">{{ book.title }}</div>
               <div class="book-author">by {{ book.author_names }}</div>
+              <div class="book-quantity">{{ book.quantity }} in Stock</div>
               <div class="book-price">${{ book.price }}</div>
             </a>
           </div>
@@ -165,6 +171,7 @@
               />
               <div class="book-title">{{ book.title }}</div>
               <div class="book-author">by {{ book.author_names }}</div>
+              <div class="book-quantity">{{ book.quantity }} in Stock</div>
               <div class="book-price">${{ book.price }}</div>
             </a>
           </div>

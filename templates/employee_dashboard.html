@@ -140,14 +140,7 @@
                 <div class="stat-number">{{ books|length }}</div>
                 <div class="stat-label">Total Books</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">0</div>
-                <div class="stat-label">Pending Orders</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">0</div>
-                <div class="stat-label">Customer Complaints</div>
-            </div>
+
         </div>
 
         <div class="book-table">
@@ -166,15 +159,14 @@
                     {% for book in books %}
                     <tr>
                         <td>{{ book.title }}</td>
-                        <td>{{ book.author_name }}</td>
-                        <td>{{ book.category_name }}</td>
+                        <td>{{ book.author_names }}</td>
+                        <td>{{ book.category_names }}</td>
                         <td>${{ book.price }}</td>
                         <td>{{ book.uploaded_by_name or 'N/A' }}</td>
                         <td>
-                            <a href="#" class="btn btn-edit">Edit</a>
-                                <form method="POST" action="{{ url_for('delete_book', book_id=book.book_id) }}" style="display: inline;">
-                                    <a href="#" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
-                                </form>
+                            <form method="POST" action="{{ url_for('delete_book', book_id=book.book_id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</button>
+                            </form>
                         </td>
                     </tr>
                     {% endfor %}

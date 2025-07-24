@@ -146,7 +146,6 @@ def vendor_signup():
             session['user_id'] = user_id
             session['email'] = email
             session['first_name'] = first_name
-            flash('Vendor successfully created!')
             return redirect(url_for('vendor_dashboard'))
         else:
             flash(message, 'error')
@@ -239,24 +238,26 @@ def home():
     
     # use STRING_AGG to combine multiple authors into a single string
     cursor.execute("""        
-        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_names
+        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(DISTINCT a.author_name, ', ') as author_names, COALESCE(i.Quantity, 0) as quantity
         FROM Book b
-        JOIN BookAuthors ba ON b.book_id = ba.book_id
-        JOIN Author a ON ba.author_id = a.author_id
+        LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+        LEFT JOIN Inventory i ON b.book_id = i.book_id
+        LEFT JOIN Author a ON ba.author_id = a.author_id
         WHERE b.price > 10 AND b.price < 20
-        GROUP BY b.book_id
+        GROUP BY b.book_id, i.Quantity
         ORDER BY b.price ASC
     """)
 
     books_under_20 = cursor.fetchall()
 
     cursor.execute("""        
-        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(a.author_name, ', ') as author_names
+        SELECT b.book_id, b.title, b.price, b.image_id, STRING_AGG(DISTINCT a.author_name, ', ') as author_names, COALESCE(i.Quantity, 0) as quantity
         FROM Book b
-        JOIN BookAuthors ba ON b.book_id = ba.book_id
-        JOIN Author a ON ba.author_id = a.author_id
+        LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+        LEFT JOIN Inventory i ON b.book_id = i.book_id
+        LEFT JOIN Author a ON ba.author_id = a.author_id
         WHERE b.price < 10
-        GROUP BY b.book_id
+        GROUP BY b.book_id, i.Quantity
         ORDER BY b.price ASC
     """)
 
@@ -286,14 +287,15 @@ def book_detail(book_id):
         SELECT 
             b.book_id, b.title, b.price, b.image_id, b.short_description,
             STRING_AGG(DISTINCT a.author_name, ', ') as author_names,
-            STRING_AGG(DISTINCT c.category_name, ', ') as category_names
+            STRING_AGG(DISTINCT c.category_name, ', ') as category_names, COALESCE(i.Quantity, 0) as quantity
         FROM Book b
+        LEFT JOIN Inventory i ON b.book_id = i.book_id
         LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
         LEFT JOIN Author a ON ba.author_id = a.author_id
         LEFT JOIN BookCategories bc ON b.book_id = bc.book_id
         LEFT JOIN Category c ON bc.category_id = c.category_id
         WHERE b.book_id = %s
-        GROUP BY b.book_id
+        GROUP BY b.book_id, b.title, b.price, b.image_id, b.short_description, i.Quantity
     """, (book_id,))
 
     book = cur.fetchone()
