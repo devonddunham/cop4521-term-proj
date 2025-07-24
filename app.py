@@ -803,7 +803,7 @@ def support():
         try:
             if not subject or not message:
                 flash('Both subject and mess are required.','error')
-                return render_template('support.html', subject=subject, message=message)
+                return render_template('Support.html', subject=subject, message=message)
             cur.execute(
             """
             INSERT INTO SupportTicket (user_id, subject, message)
@@ -822,7 +822,7 @@ def support():
             con.close()
         # refresh page so user cannot resubmit the same form
         return redirect(url_for('support'))
-    return render_template('support.html')
+    return render_template('Support.html')
 
 @app.route('/employee/handleComplaint', methods=['GET', 'POST'])    #added here ethan
 @require_role('Employee')
