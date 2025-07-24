@@ -384,7 +384,7 @@ def delete_book_from_database(book_id, user_id, user_role):
     finally:
         cur.close()
         con.close()
-def process_checkout_in_database(user_id):
+def process_checkout_in_database(user_id):  #adding the actual 'math' for inventory y stuff
     con = get_db_connection()
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -397,15 +397,27 @@ def process_checkout_in_database(user_id):
 
         total_price = sum(item['quantity'] * item['price'] for item in cart_items)
 
-        #adding below
+        #adding below, works
         cur.execute("SELECT customer_id FROM Customers INNER JOIN Users ON Customers.customer_name = (Users.first_name || ' ' || Users.last_name)")
         new_id = cur.fetchone()
-        ### now new thing is transactions isn't working
 
         cur.execute(
             "INSERT INTO Transactions (transaction_total, transaction_date, customer_id) VALUES (%s, CURRENT_DATE, %s)",
-            (total_price, new_id)  #changed user_id to new_id
+            (total_price, new_id)  #changed user_id to new_id, works
         )
+        
+        #updating inventory here, test if user asks for more than stock, works
+        for item in cart_items:
+            bookId = item['book_id']
+            quantity = item['quantity']
+            cur.execute("SELECT Quantity FROM Inventory WHERE book_id=%s",(bookId,))
+            inventory = cur.fetchone()['quantity']
+            print("INV:",inventory)
+
+            if inventory < quantity:
+                return False, "We're sorry, we don't have enough in stock for your purchase"
+            
+            cur.execute("UPDATE Inventory SET Quantity = Quantity-%s WHERE book_id=%s", (quantity, bookId))
 
         cur.execute("DELETE FROM Cart WHERE user_id = %s", (user_id,))
 

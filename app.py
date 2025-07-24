@@ -516,10 +516,20 @@ def vendor_dashboard():
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cur.execute("""
-        SELECT b.book_id, b.title, b.price, b.image_id, a.author_name, c.category_name
+        SELECT
+            b.book_id,
+            b.title,
+            b.price,
+            b.image_id,
+            a.author_name,
+            c.category_name,
+            i.Quantity AS inventory
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
-        JOIN Category c ON b.category_id = c.category_id
+        JOIN BookAuthors ba ON b.book_id = ba.book_id
+        JOIN Author a ON ba.author_id = a.author_id
+        JOIN BookCategories bc ON b.book_id = bc.book_id
+        JOIN Category c ON bc.category_id = c.category_id
+        LEFT JOIN Inventory i ON b.book_id = i.book_id
         WHERE b.uploaded_by = %s
         ORDER BY b.book_id DESC
     """, (user_id,))
@@ -537,11 +547,19 @@ def employee_dashboard():
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cur.execute("""
-        SELECT b.book_id, b.title, b.price, b.image_id, a.author_name, c.category_name, 
-               u.first_name as uploaded_by_name
+        SELECT
+            b.book_id,
+            b.title,
+            b.price,
+            b.image_id,
+            a.author_name,
+            c.category_name,
+            u.first_name AS uploaded_by_name
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
-        JOIN Category c ON b.category_id = c.category_id
+        JOIN BookAuthors ba ON b.book_id = ba.book_id
+        JOIN Author a ON ba.author_id = a.author_id
+        JOIN BookCategories bc ON b.book_id = bc.book_id
+        JOIN Category c ON bc.category_id = c.category_id
         LEFT JOIN Users u ON b.uploaded_by = u.user_id
         ORDER BY b.book_id DESC
     """)
@@ -733,7 +751,7 @@ def internal_server_error(e):
         error_title="Internal Server Error",
         error_message="We're sorry, something went wrong on our end. We've been notified and are looking into it."
     ), 500
-@app.route('/checkout', methods=['GET', 'POST'])
+@app.route('/checkout', methods=['GET', 'POST'])    #heree
 @require_role('Customer')
 def checkout():
     user_id = session.get('user_id')
@@ -796,7 +814,25 @@ def support():
             con.close()
         # refresh page so user cannot resubmit the same form
         return redirect(url_for('support'))
-    return render_template('support.html')
+    return render_template('Support.html')
+
+@app.route('/employee/handleComplaint', methods=['GET', 'POST'])
+@require_role('Employee')
+def handleComplaint():
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("""
+        SELECT ticket_id, user_id, subject, message, status, created_at
+        FROM SupportTicket
+        ORDER BY created_at DESC
+    """)
+    tickets = cur.fetchall()
+
+    cur.close()
+    con.close()
+
+    return render_template('handleComplaint.html', tickets=tickets)
 
 if __name__ == '__main__':
     start_db()
