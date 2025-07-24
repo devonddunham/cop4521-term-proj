@@ -822,6 +822,23 @@ def support():
         return redirect(url_for('support'))
     return render_template('support.html')
 
+@app.route('/employee/handleComplaint', methods=['GET', 'POST'])    #added here ethan
+@require_role('Employee')
+def handleComplaint():
+    con = get_db_connection()
+    cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("""
+        SELECT ticket_id, user_id, subject, message, status, created_at
+        FROM SupportTicket
+        ORDER BY created_at DESC
+    """)
+    tickets = cur.fetchall()
+
+    cur.close()
+    con.close()
+
+    return render_template('handleComplaint.html', tickets=tickets)
 if __name__ == '__main__':
     initialize_db()
     create_tables_roles()
