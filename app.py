@@ -632,7 +632,7 @@ def delete_book(book_id):
     else:
         return redirect(url_for('vendor_dashboard'))
 
-"""
+
 #TODO: Add categories in database.py
 @app.route('/api/categories')
 @require_role('Vendor')
@@ -649,7 +649,7 @@ def get_categories():
     # this is for the dropdown on the upload books page
     # im so fr i had no clue how to do this i had to ask chat
     return  {'categories': [dict(cat) for cat in categories]}
-"""
+
 
 @app.route('/api/authors')
 @require_role('Vendor')
