@@ -267,6 +267,8 @@ def home():
 
     if get_current_user_role() == 'Vendor':
         return render_template('vendorHome.html', books_under_10 = books_under_10, books_under_20 = books_under_20, Hello=Hello)
+    if get_current_user_role() == 'Employee':
+        return render_template('employeeHome.html', books_under_10 = books_under_10, books_under_20 = books_under_20, Hello=Hello)
     else:
         return render_template('home.html', books_under_10 = books_under_10, books_under_20 = books_under_20, Hello=Hello)
 
