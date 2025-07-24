@@ -23,6 +23,9 @@ wheels/
 #
 /static/images/*.jpeg
 
+!/static/images/default_book.jpeg
+!/static/images/sharanya_as_patrick.jpeg
+
 # Virtual Environment
 .venv/
 venv/

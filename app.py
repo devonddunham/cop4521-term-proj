@@ -7,7 +7,9 @@ import os # for uploading files and managing on system
 from werkzeug.utils import secure_filename # hell yeah worktrain
 import uuid 
 
-
+initialize_db()
+create_tables_roles()
+pop_from_json()
 app = Flask(__name__)
 app.secret_key = 'wubahubalub3456765' #no one guessing ts
 
@@ -516,11 +518,20 @@ def vendor_dashboard():
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cur.execute("""
-        SELECT b.book_id, b.title, b.price, b.image_id, a.author_name, c.category_name
+        SELECT 
+            b.book_id, 
+            b.title, 
+            b.price, 
+            b.image_id,
+            STRING_AGG(DISTINCT a.author_name, ', ') as author_names,
+            STRING_AGG(DISTINCT c.category_name, ', ') as category_names
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
-        JOIN Category c ON b.category_id = c.category_id
+        LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+        LEFT JOIN Author a ON ba.author_id = a.author_id
+        LEFT JOIN BookCategories bc ON b.book_id = bc.book_id
+        LEFT JOIN Category c ON bc.category_id = c.category_id
         WHERE b.uploaded_by = %s
+        GROUP BY b.book_id
         ORDER BY b.book_id DESC
     """, (user_id,))
 
@@ -537,12 +548,21 @@ def employee_dashboard():
     cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cur.execute("""
-        SELECT b.book_id, b.title, b.price, b.image_id, a.author_name, c.category_name, 
-               u.first_name as uploaded_by_name
+        SELECT 
+            b.book_id, 
+            b.title, 
+            b.price, 
+            b.image_id,
+            STRING_AGG(DISTINCT a.author_name, ', ') as author_names,
+            STRING_AGG(DISTINCT c.category_name, ', ') as category_names,
+            u.first_name as uploaded_by_name
         FROM Book b
-        JOIN Author a ON b.author_id = a.author_id
-        JOIN Category c ON b.category_id = c.category_id
+        LEFT JOIN BookAuthors ba ON b.book_id = ba.book_id
+        LEFT JOIN Author a ON ba.author_id = a.author_id
+        LEFT JOIN BookCategories bc ON b.book_id = bc.book_id
+        LEFT JOIN Category c ON bc.category_id = c.category_id
         LEFT JOIN Users u ON b.uploaded_by = u.user_id
+        GROUP BY b.book_id, u.first_name
         ORDER BY b.book_id DESC
     """)
 
@@ -664,7 +684,7 @@ def get_authors():
     con.close()
 
     #same as above
-    return  {'categories': [dict(author) for author in authors]}
+    return  {'authors': [dict(author) for author in authors]}
         
 @app.route('/about')
 @require_role('Customer')
@@ -801,6 +821,8 @@ def support():
     return render_template('support.html')
 
 if __name__ == '__main__':
-    start_db()
+    initialize_db()
+    create_tables_roles()
+
 
     app.run(debug=True)

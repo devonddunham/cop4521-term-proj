@@ -144,22 +144,6 @@
               <div class="book-price">${{ book.price }}</div>
             </a>
           </div>
-          {% endfor %} {% for book in books_under_20 %}
-          <div class="book-card">
-            <a
-              href="{{ url_for('book_detail', book_id=book.book_id) }}"
-              style="text-decoration: none; color: inherit"
-            >
-              <img
-                src="/static/images/{{ book.image_id }}.jpeg"
-                alt="{{ book.title }}"
-                class="book-image"
-              />
-              <div class="book-title">{{ book.title }}</div>
-              <div class="book-author">by {{ book.author_names }}</div>
-              <div class="book-price">${{ book.price }}</div>
-            </a>
-          </div>
           {% endfor %}
         </div>
       </div>
@@ -168,22 +152,6 @@
         <h2 class="section-title">Books Under $10!</h2>
         <div class="book-grid">
           {% for book in books_under_10 %}
-          <div class="book-card">
-            <a
-              href="{{ url_for('book_detail', book_id=book.book_id) }}"
-              style="text-decoration: none; color: inherit"
-            >
-              <img
-                src="/static/images/{{ book.image_id }}.jpeg"
-                alt="{{ book.title }}"
-                class="book-image"
-              />
-              <div class="book-title">{{ book.title }}</div>
-              <div class="book-author">by {{ book.author_names }}</div>
-              <div class="book-price">${{ book.price }}</div>
-            </a>
-          </div>
-          {% endfor %} {% for book in books_under_10 %}
           <div class="book-card">
             <a
               href="{{ url_for('book_detail', book_id=book.book_id) }}"

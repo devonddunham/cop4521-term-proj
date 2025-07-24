@@ -10,6 +10,7 @@ import psycopg2
 import psycopg2.extras
 import json
 import requests
+import random
 
 from dotenv import load_dotenv
 load_dotenv() # Load environment variables from .env file
@@ -458,7 +459,7 @@ def pop_from_json(filepath='dejiji.books.json'):
         cur.execute("INSERT INTO Users (user_id, email, first_name, last_name, password_hash, role) VALUES (%s, %s, %s, %s, %s, %s)",
                     (uploader_user_id, 'importer@system.com', 'JSON', 'Importer', 'nohash', 'Admin'))
         con.commit()
-    for book in books_data[:25]:
+    for book in books_data:
         try:
             book_id = book.get('_id')
             title = book.get('title')
@@ -474,11 +475,12 @@ def pop_from_json(filepath='dejiji.books.json'):
             cur.execute("SELECT book_id FROM Book WHERE book_id = %s", (book_id,))
             if cur.fetchone():
                 continue
-
+            rand = lambda: random.randint(5, 35)
+            price = rand()
             image_id = download_image_from_url(image_url, book_id)
             # insert book with a default price of 20 and image_id as book_id for now
             cur.execute("INSERT INTO Book (book_id, title, price, image_id, uploaded_by, short_description) VALUES (%s, %s, %s, %s, %s, %s)",
-                        (book_id, title, 15, image_id, uploader_user_id, short_desc))
+                        (book_id, title, price, image_id, uploader_user_id, short_desc))
 
             # insert authors and link to book
             for author_name in authors:
