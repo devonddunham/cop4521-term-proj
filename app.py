@@ -17,16 +17,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.before_first_request
-def init_everything():
-    existing = set(os.listdir(UPLOAD_FOLDER))
+_initialized = False
 
-    defaults = {'default_book.jpeg', 'sharanya_as_patrick.jpeg'}
-    if existing == defaults:
-        drop_tables()
-        initialize_db()
-        create_tables_roles()
-        pop_from_json()
+@app.before_request
+def init_everything():
+
+    global _initialized
+    if not _initialized:
+        existing = set(os.listdir(UPLOAD_FOLDER))
+
+        defaults = {'default_book.jpeg', 'sharanya_as_patrick.jpeg'}
+        if existing == defaults:
+            drop_tables()
+            initialize_db()
+            create_tables_roles()
+            pop_from_json()
+        _initialized = True
 
 """In check_user_permission() in database.py, I assigned each role to a number
 Customer = 1, Vendor = 2, Employee = 3, Admin = 4
