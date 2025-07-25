@@ -29,7 +29,7 @@ A web-based bookstore platform built with Flask and PostgreSQL, featuring role-b
 
 ## Distribution of Work
   Ehtan:
-  ###Ivan: Added the search by category, connected the cart page to checkout and made it calculate the total, and created the support page on the customer end along with the table.
+  ### Ivan: Added the search by category, connected the cart page to checkout and made it calculate the total, and created the support page on the customer end along with the table. Anywhere in those functions I modified the html files to make those features work
   Isa:
   Devon:
   Joshua:
