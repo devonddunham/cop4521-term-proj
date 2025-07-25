@@ -613,7 +613,7 @@ def upload_book():
             image_id = os.path.splitext(unique_filename)[0]
 
         if not all([title, author_names, category_names, price]):
-            flash("All fields except image are required, ")
+            flash("All fields except image and description are required, ")
             return render_template('upload_book.html',user_role=user_role)
         
         try:

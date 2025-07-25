@@ -205,6 +205,16 @@
                 </div>
             </div>
         </div>
+
+        <div class="form-group">
+            <label for="short_description">Book Description:</label>
+            <textarea 
+                id="short_description" 
+                name="short_description" 
+                rows="4" 
+                placeholder="Enter a brief description of the book..."
+                class="form-control">{{ request.form.get('short_description', '') }}</textarea>
+        </div>
         
         <button type="submit" class="submit-btn">Upload Book</button>
         
