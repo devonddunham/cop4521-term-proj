@@ -101,9 +101,44 @@
         background-color: #eee;
         font-size: 0.9em;
       }
+      .flash-messages {
+          max-width: 800px;
+          margin: 1em auto;
+          padding: 0 2em;
+      }
+      .flash {
+          padding: 0.8em;
+          border-radius: 4px;
+          margin-bottom: 0.5em;
+          border: 1px solid;
+      }
+      .flash.success {
+          background-color: #e8f5e8;
+          color: #2e7d32;
+          border-color: #c8e6c9;
+      }
+      .flash.error {
+          background-color: #ffebee;
+          color: #c62828;
+          border-color: #ffcdd2;
+      }
+      .flash.info {
+          background-color: #e3f2fd;
+          color: #1565c0;
+          border-color: #bbdefb;
+      }
     </style>
   </head>
   <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
     <header>
       <h1>Welcome to the Dejiji Bookstore</h1>
       <p>

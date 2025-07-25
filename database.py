@@ -319,7 +319,7 @@ def download_image_from_url(image_url, book_id, save_dir='static/images', defaul
         return default_image_id
 
 # in comboination with multiple people made this function
-def add_book_to_database(title, author_names, category_names, price, image_id, uploaded_by, short_description=None):
+def add_book_to_database(title, author_names, category_names, price, image_id, uploaded_by, short_description=None, quantity=1):
     con = get_db_connection()
     cur = con.cursor()
 
@@ -343,7 +343,7 @@ def add_book_to_database(title, author_names, category_names, price, image_id, u
             category_id = get_or_create_category(category_name.strip())
             cur.execute("INSERT INTO BookCategories (book_id, category_id) VALUES (%s, %s)", (new_book_id, category_id))
 
-        cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, 1))
+        cur.execute("INSERT INTO Inventory (book_id, Quantity) VALUES (%s, %s)", (new_book_id, quantity))
 
         con.commit()
         return True, 'Booked added'

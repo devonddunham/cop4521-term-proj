@@ -591,6 +591,7 @@ def upload_book():
         category_name_str = request.form.get('category_name', '')
         price = request.form.get('price')
         short_description = request.form.get('short_description')
+        quantity = request.form.get('quantity')
 
         author_names = [name.strip() for name in author_name_str.split(',') if name.strip()]
         category_names = [name.strip() for name in category_name_str.split(',') if name.strip()]
@@ -612,7 +613,7 @@ def upload_book():
 
             image_id = os.path.splitext(unique_filename)[0]
 
-        if not all([title, author_names, category_names, price]):
+        if not all([title, author_names, category_names, price, quantity]):
             flash("All fields except image and description are required, ")
             return render_template('upload_book.html',user_role=user_role)
         
@@ -625,8 +626,9 @@ def upload_book():
             flash('Price is invalid')
             return render_template('upload_book.html',user_role=user_role)
         
+        
         user_id = session['user_id']
-        success, message = add_book_to_database(title, author_names, category_names, price, image_id, user_id, short_description)
+        success, message = add_book_to_database(title, author_names, category_names, price, image_id, user_id, short_description, quantity)
 
         if success:
             flash('Book uploaded!')
