@@ -24,26 +24,13 @@ A web-based bookstore platform built with Flask and PostgreSQL, featuring role-b
 - **Frontend**: HTML, CSS, JavaScript
 - **Authentication**: Flask-Login, Flask-Security
 
+## Libraries
+  bcrypt, blinker, cachelib, certifi, charset-normalizer, click, dotenv, Flask, Flask-Session, gunicorn, idna, itsdangerous, Jinja2, MarkupSafe, msgspec, packaging, psycopg2, python-dotenv, requests, urllib3, Werkzeug, Json, secrets 
 
-### How to create and connect you to own database
-so as of right now, we are going to stick to using and running our own databases on your local machines. Sharanya is currently working with the IT department for us to work with Azure which will help us move from our local machines to a shared and accessible platform which will need to happen anyways according to sharanya so the quicker the better. 
-
-read this to help: https://neon.com/postgresql/postgresql-python/connect 
-
-^i had to manipulate my path enviroment settings to allow the psql - U postgres to run since it was in a completely different directory. 
-
-Go in and follow the steps, when we get to create a new database, run the command CREATE DATABASE dejiji_db;
-you should get a confirmation message to know it was created sucessfully
-
-you can login to PGAdmin and the new db name should pop up
-
-create an .env file for your personal use
-DB_NAME='dejiji_db'
-DB_USER='xxx'
-DB_PASS='xxx'
-the xxx comes from when you set up PGAdmin and will vary between everyone for now until we get access to Azure
-
-###HTML pages to add### 
-Customer: home, login, sign up, about us, cart that leads to checkout, search, customer service
-Vendor: insert/delete/traking sales of books
-Employee/Owner: customer service (insert transacion id to look up/ query by name), access to everything else
+## Distribution of Work
+  Ehtan:
+  Ivan:
+  Isa:
+  Devon:
+  Joshua:
+  Jack:
