@@ -28,9 +28,9 @@ A web-based bookstore platform built with Flask and PostgreSQL, featuring role-b
   bcrypt, blinker, cachelib, certifi, charset-normalizer, click, dotenv, Flask, Flask-Session, gunicorn, idna, itsdangerous, Jinja2, MarkupSafe, msgspec, packaging, psycopg2, python-dotenv, requests, urllib3, Werkzeug, Json, secrets 
 
 ## Distribution of Work
-  Ehtan:
+  Ethan:
   ### Ivan: Added the search by category, connected the cart page to checkout and made it calculate the total, and created the support page on the customer end along with the table. Anywhere in those functions I modified the html files to make those features work
-  Isa:
+  Isa: fixed the mult_authors table/with ethan, collaborated with ethan to make VMS, intial db set up (if table exits), fixed cart/inventory, made about page, did vendor/employee implementation of the customer service side
   ### Devon: Added search by title or author. added the new schema for multiple authors or categories. Added the feature to populate from a json file. In collab worked to create the html files
    ### Joshua: Added the catalog/browse books with the search funtion(title,author,price). Going through the htmls pages to get them to look better and work together. Helped Isa with the about page. 
   Jack:
